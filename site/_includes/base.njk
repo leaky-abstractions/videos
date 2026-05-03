@@ -109,7 +109,15 @@
                 <div id="shell-output"></div>
                 <script>
                     (function() {
-                        document.getElementById('shell-input').focus();
+                        var shellInput = document.getElementById('shell-input');
+                        if (window.innerWidth > 600) {
+                            shellInput.focus();
+                            document.addEventListener('click', function(e) {
+                                if (!e.target.closest('a, button, input, .theme-picker')) {
+                                    shellInput.focus();
+                                }
+                            });
+                        }
                         var pp = CURRENT_PATH;
                         if (pp.endsWith('.md')) {
                             pp = pp.substring(0, pp.lastIndexOf('/'));
