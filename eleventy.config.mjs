@@ -8,6 +8,15 @@ import fg from 'fast-glob';
 
 const md = markdownIt({ html: true, linkify: true });
 
+// Path prefix for GitHub Pages subdirectory deployment
+// Set via ELEVENTY_PATH_PREFIX env var, defaults to '/' for local dev
+const PATH_PREFIX = (process.env.ELEVENTY_PATH_PREFIX || '/').replace(/\/$/, '');
+
+function prefixUrl(url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return PATH_PREFIX + url;
+}
+
 function buildFiletree() {
     const links = yaml.load(readFileSync('site/_data/links.yml', 'utf8')) || [];
     const linksChildren = {};
@@ -122,13 +131,26 @@ function buildFiletree() {
         },
     };
 
-    return {
+    const tree = {
         '~': {
             type: 'dir',
             url: '/',
             children: rootChildren,
         },
     };
+
+    // Apply path prefix to all URLs in the tree
+    function prefixTree(node) {
+        if (node.url) node.url = prefixUrl(node.url);
+        if (node.children) {
+            for (const child of Object.values(node.children)) {
+                prefixTree(child);
+            }
+        }
+    }
+    prefixTree(tree['~']);
+
+    return tree;
 }
 
 function buildContentDirData() {
@@ -166,7 +188,7 @@ function buildContentDirData() {
                     summary,
                     date,
                     content: body,
-                    url: '/' + dirName + '/' + slug + '/',
+                    url: prefixUrl('/' + dirName + '/' + slug + '/'),
                 };
             });
 
@@ -226,7 +248,7 @@ function buildSeriesData() {
                 date: new Date(epMeta.date).toISOString().slice(0, 10),
                 episode: epMeta.episode || 0,
                 summary: blogData.summary || '',
-                url: '/episodes/' + slug + '/' + epSlug + '/',
+                url: prefixUrl('/episodes/' + slug + '/' + epSlug + '/'),
             });
         }
         episodes.sort((a, b) => a.episode - b.episode);
@@ -369,7 +391,11 @@ export default function (eleventyConfig) {
         return content.replace('</head>', script + '\n</head>');
     });
 
+    // Expose path prefix to templates
+    eleventyConfig.addGlobalData('pathPrefix', PATH_PREFIX || '');
+
     return {
+        pathPrefix: PATH_PREFIX || '/',
         dir: {
             input: '.',
             output: '_site',

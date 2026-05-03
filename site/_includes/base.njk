@@ -10,7 +10,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="/css/terminal.css" />
+        <link rel="stylesheet" href="{{ pathPrefix }}/css/terminal.css" />
         <script>
             (function() {
                 var saved = localStorage.getItem('theme');
@@ -85,6 +85,7 @@
                 {% set vDir = virtualPath.replace("/" + catSlug + ".md", "") %}
                 {% set parentUrl = vDir | replace("~", "") | default("/") %}
                 {% if parentUrl != "/" %}{% set parentUrl = parentUrl + "/" %}{% endif %}
+                {% set parentUrl = pathPrefix + parentUrl %}
                 <div class="section">
                     <div class="prompt"><span class="path">{{ vDir }}</span> <span class="dollar">$</span> cat {{ catSlug }}.md</div>
                     <div class="post-content">
@@ -118,7 +119,7 @@
                 </script>
             </div>
         </div>
-        <script src="/js/themes.js"></script>
-        <script src="/js/shell.js"></script>
+        <script src="{{ pathPrefix }}/js/themes.js"></script>
+        <script src="{{ pathPrefix }}/js/shell.js"></script>
     </body>
 </html>

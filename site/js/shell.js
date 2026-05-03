@@ -282,14 +282,14 @@
         }
 
         if (cmd === 'cd ~' || cmd === 'cd') {
-            window.location.href = '/';
+            window.location.href = FILETREE['~'].url;
             return;
         }
 
         if (cmd === 'cd ..') {
             var parentPath = getParentPath();
             var parentNode = resolveNode(parentPath);
-            window.location.href = (parentNode && parentNode.url) || '/';
+            window.location.href = (parentNode && parentNode.url) || FILETREE['~'].url;
             return;
         }
 

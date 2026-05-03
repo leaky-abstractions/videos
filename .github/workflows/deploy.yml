@@ -24,6 +24,8 @@ jobs:
             - uses: oven-sh/setup-bun@v2
             - run: bun install --frozen-lockfile
             - run: bun run build
+              env:
+                  ELEVENTY_PATH_PREFIX: /videos
             - uses: actions/upload-pages-artifact@v3
               with:
                   path: _site

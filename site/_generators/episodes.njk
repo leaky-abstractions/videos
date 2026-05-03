@@ -20,7 +20,7 @@ virtualPath: "~/episodes"
     {% for series in allSeriesData %}
     <div class="post series">
         <div class="post-title">
-            <a href="/episodes/{{ series.slug }}/">{{ series.slug }}/</a>
+            <a href="{{ pathPrefix }}/episodes/{{ series.slug }}/">{{ series.slug }}/</a>
         </div>
         <div class="post-meta">
             {{ series.episodes.length }} episode{% if series.episodes.length != 1 %}s{% endif %}
