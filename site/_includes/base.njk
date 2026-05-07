@@ -110,7 +110,7 @@
                 <script>
                     (function() {
                         var shellInput = document.getElementById('shell-input');
-                        if (window.innerWidth > 600) {
+                        if (window.matchMedia('(pointer: fine)').matches) {
                             shellInput.focus();
                             document.addEventListener('click', function(e) {
                                 if (!e.target.closest('a, button, input, .theme-picker')) {
