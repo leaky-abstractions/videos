@@ -127,6 +127,24 @@
                 </script>
             </div>
         </div>
+        <script>
+            (function() {
+                if (window.innerWidth > 600) return;
+                var chrome = document.querySelector('.terminal-chrome');
+                var scroller = document.querySelector('.terminal');
+                var lastScrollTop = 0;
+
+                scroller.addEventListener('scroll', function() {
+                    var st = scroller.scrollTop;
+                    if (st > lastScrollTop && st > chrome.offsetHeight) {
+                        chrome.classList.add('chrome-hidden');
+                    } else if (st < lastScrollTop) {
+                        chrome.classList.remove('chrome-hidden');
+                    }
+                    lastScrollTop = st;
+                }, { passive: true });
+            })();
+        </script>
         <script src="{{ pathPrefix }}/js/themes.js"></script>
         <script src="{{ pathPrefix }}/js/shell.js"></script>
     </body>

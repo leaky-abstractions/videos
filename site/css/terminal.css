@@ -443,6 +443,11 @@ h2, .heading-md {
         position: sticky;
         top: 0;
         z-index: 5;
+        transition: transform 0.3s ease;
+    }
+
+    .terminal-chrome.chrome-hidden {
+        transform: translateY(-100%);
     }
 
     .terminal-chrome .dots {
