@@ -31,7 +31,7 @@ body {
     background: var(--base01);
     color: var(--base05);
     font-family: 'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
-    height: 100vh;
+    height: 100dvh;
     padding: 24px;
     display: flex;
     overflow: hidden;
