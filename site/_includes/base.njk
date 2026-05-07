@@ -55,22 +55,31 @@
                                 urls.push(null);
                             }
                         }
-                        parts.forEach(function(part, i) {
-                            if (i > 0) {
+                        var isMobile = window.innerWidth <= 600;
+                        var startIndex = 0;
+                        if (isMobile && parts.length > 2) {
+                            startIndex = parts.length - 2;
+                            var ellipsis = document.createElement('a');
+                            ellipsis.href = urls[startIndex - 1] || '/';
+                            ellipsis.textContent = '...'
+                            bc.appendChild(ellipsis);
+                        }
+                        for (var i = startIndex; i < parts.length; i++) {
+                            if (i > 0 || startIndex > 0) {
                                 var sep = document.createElement('span');
                                 sep.className = 'sep';
                                 sep.textContent = ' / ';
                                 bc.appendChild(sep);
                             }
                             if (i === parts.length - 1) {
-                                bc.appendChild(document.createTextNode(part));
+                                bc.appendChild(document.createTextNode(parts[i]));
                             } else {
                                 var a = document.createElement('a');
                                 a.href = urls[i] || '/';
-                                a.textContent = part;
+                                a.textContent = parts[i];
                                 bc.appendChild(a);
                             }
-                        });
+                        }
                     })();
                 </script>
                 <div style="position: relative; margin-left: auto;">
