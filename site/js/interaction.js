@@ -256,6 +256,88 @@
         }, 150);
     });
 
+    // --- Table of contents ---
+    var tocToggle = document.getElementById('toc-toggle');
+    var tocPanel = document.getElementById('toc-panel');
+    var tocClose = document.getElementById('toc-close');
+    var tocList = document.getElementById('toc-list');
+    var postContent = document.querySelector('.post-content');
+
+    if (postContent && tocToggle && tocList) {
+        var headings = postContent.querySelectorAll('h1, h2, h3');
+        var tocContainer = document.getElementById('toc-container');
+        if (headings.length > 1 && tocContainer) {
+            tocContainer.style.display = '';
+
+            headings.forEach(function (h, i) {
+                if (!h.id) {
+                    h.id = h.textContent.trim().toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/^-|-$/g, '');
+                }
+                var link = document.createElement('a');
+                link.href = '#' + h.id;
+                link.textContent = h.textContent;
+                if (h.tagName === 'H3') link.className = 'toc-h3';
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    history.replaceState(null, '', '#' + h.id);
+                    h.scrollIntoView({ behavior: 'smooth' });
+                    tocPanel.classList.remove('open');
+                });
+                tocList.appendChild(link);
+            });
+
+            // Scroll to hash on page load
+            if (window.location.hash) {
+                var target = document.getElementById(window.location.hash.substring(1));
+                if (target) {
+                    setTimeout(function () { target.scrollIntoView(); }, 100);
+                }
+            }
+
+            tocToggle.addEventListener('click', function (e) {
+                e.stopPropagation();
+                tocPanel.classList.toggle('open');
+            });
+
+            tocClose.addEventListener('click', function (e) {
+                e.stopPropagation();
+                tocPanel.classList.remove('open');
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!tocPanel.contains(e.target) && e.target !== tocToggle) {
+                    tocPanel.classList.remove('open');
+                }
+            });
+
+            // Highlight active heading on scroll
+            var tocLinks = tocList.querySelectorAll('a');
+            var scrollContainer = window.innerWidth <= 600 ? document.querySelector('.terminal') : document.querySelector('.terminal-body');
+            if (scrollContainer) {
+                var lastHash = '';
+                scrollContainer.addEventListener('scroll', function () {
+                    var current = '';
+                    headings.forEach(function (h) {
+                        var rect = h.getBoundingClientRect();
+                        if (rect.top <= 80) current = h.id;
+                    });
+                    tocLinks.forEach(function (link) {
+                        link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+                    });
+                    if (current && current !== lastHash) {
+                        lastHash = current;
+                        history.replaceState(null, '', '#' + current);
+                    } else if (!current && lastHash) {
+                        lastHash = '';
+                        history.replaceState(null, '', window.location.pathname);
+                    }
+                }, { passive: true });
+            }
+        }
+    }
+
     // --- Code block copy buttons ---
     document.querySelectorAll('.post-content pre').forEach(function (pre) {
         var btn = document.createElement('button');
