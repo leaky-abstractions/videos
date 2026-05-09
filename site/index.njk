@@ -35,9 +35,9 @@ virtualPath: "~"
 
 <div class="section">
     <div class="prompt"><span class="path">~</span> <span class="dollar">$</span> ls links/</div>
-    <div class="links">
+    <div class="ls-output">
         {% for link in links %}
-        <a href="{{ link.url }}"{% if link.external %} target="_blank" rel="noopener"{% endif %}>{% if link.icon %}{% if "fa-" in link.icon %}<i class="{{ link.icon }}"></i> {% else %}{{ link.icon }} {% endif %}{% endif %}<span class="link-text">{{ link.name }}</span></a>
+        <a href="{{ link.url }}" class="ls-entry ls-type-{{ link.type | default('file') }}{% if link.external %} ls-external{% endif %}"{% if link.external %} target="_blank" rel="noopener"{% endif %}>{% if link.icon %}<i class="{{ link.icon }}"></i> {% endif %}<span class="link-text">{{ link.name }}</span></a>
         {% endfor %}
     </div>
 </div>

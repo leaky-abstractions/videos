@@ -29,6 +29,9 @@ function buildFiletree() {
         if (link.external) {
             node.external = true;
         }
+        if (link.icon) {
+            node.icon = link.icon;
+        }
         linksChildren[link.name] = node;
     }
 

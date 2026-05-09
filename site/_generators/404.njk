@@ -1,0 +1,33 @@
+---
+title: "404"
+permalink: /404.html
+virtualPath: "~"
+---
+
+<div class="section">
+    <div class="prompt"><span class="path">~</span> <span class="dollar">$</span> cd <span id="not-found-path"></span></div>
+    <div class="cmd-output"><span class="err">bash: cd: <span id="not-found-path2"></span>: No such file or directory</span></div>
+</div>
+
+<div class="section">
+    <div class="prompt"><span class="path">~</span> <span class="dollar">$</span> cat /etc/motd</div>
+    <div class="cmd-output"><span class="ok">  You seem lost. Try one of these:
+
+    cd ~            go home
+    cd ~/episodes   browse episodes
+    help            show available commands</span></div>
+</div>
+
+<div class="back-link">
+    <a href="{{ pathPrefix }}/">&larr; cd ~</a>
+</div>
+
+<script>
+    (function() {
+        var path = window.location.pathname || '/unknown';
+        var els = document.querySelectorAll('#not-found-path, #not-found-path2');
+        for (var i = 0; i < els.length; i++) {
+            els[i].textContent = path;
+        }
+    })();
+</script>

@@ -270,24 +270,6 @@ h2,
     color: var(--base0E);
 }
 
-.links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    font-size: 0.85rem;
-}
-
-.links a {
-    color: var(--base0C);
-}
-
-.links a {
-    text-decoration: none;
-}
-
-.links a:hover .link-text {
-    text-decoration: underline;
-}
 
 .symlink {
     color: var(--base03);
@@ -519,6 +501,56 @@ code[class*='language-'] .token.inserted {
     margin-bottom: 16px;
     padding-left: 4px;
     white-space: pre-wrap;
+}
+
+.ls-output {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    white-space: nowrap;
+    font-size: 0.85rem;
+}
+
+.ls-output-long {
+    font-size: 0.85rem;
+}
+
+.ls-output-long .ls-entry-line {
+    margin-bottom: 2px;
+}
+
+.ls-output-long .ls-date {
+    color: var(--base03);
+}
+
+a.ls-entry {
+    text-decoration: none;
+}
+
+a.ls-entry:hover {
+    text-decoration: none;
+}
+
+a.ls-entry:hover .link-text {
+    text-decoration: underline;
+}
+
+.ls-entry i {
+    margin-right: 2px;
+    display: inline-block;
+}
+
+.ls-type-dir,
+.ls-type-symlink {
+    color: var(--base0D);
+}
+
+.ls-type-file {
+    color: var(--base0B);
+}
+
+.ls-external {
+    color: var(--base0E);
 }
 
 .cmd-output .ok {

@@ -58,8 +58,16 @@
         return parts.join('/');
     }
 
+    function getIcon(child, name) {
+        if (child.icon) return child.icon;
+        if (child.type === 'dir') return 'fa-solid fa-folder';
+        if (child.type === 'symlink') return 'fa-solid fa-folder';
+        if (name.endsWith('.md')) return 'fa-brands fa-markdown';
+        return 'fa-solid fa-file-lines';
+    }
+
     function listChildren(node, flags) {
-        if (!node || !node.children) return 'not a directory';
+        if (!node || !node.children) return null;
         var entries = Object.entries(node.children);
 
         if (flags.indexOf('t') !== -1) {
@@ -73,18 +81,63 @@
         }
 
         var longFormat = flags.indexOf('l') !== -1;
-        var lines = entries.map(function (entry) {
-            var name = entry[0];
-            var child = entry[1];
-            var suffix = child.type === 'dir' ? '/' : '';
-            var symlink = child.type === 'symlink' ? ' -> ' + child.target : '';
+        var container = document.createElement('div');
 
-            if (longFormat && child.date) {
-                return '  ' + (child.date || '          ') + '  ' + name + suffix + symlink;
+        function makeEntry(name, child, tag) {
+            var suffix = (child.type === 'dir' || child.type === 'symlink') && !name.endsWith('/') ? '/' : '';
+            var el = document.createElement(child.url ? 'a' : tag);
+            el.className = 'ls-entry ls-type-' + (child.type || 'file') + (child.external ? ' ls-external' : '');
+            if (child.url) {
+                el.href = child.url;
+                if (child.external) {
+                    el.target = '_blank';
+                    el.rel = 'noopener';
+                }
             }
-            return '  ' + name + suffix + symlink;
-        });
-        return lines.join('\n');
+
+            var icon = document.createElement('i');
+            icon.className = getIcon(child, name);
+            el.appendChild(icon);
+            el.appendChild(document.createTextNode(' '));
+
+            var text = document.createElement('span');
+            text.className = 'link-text';
+            text.textContent = name + suffix;
+            el.appendChild(text);
+
+            return el;
+        }
+
+        if (!longFormat) {
+            container.className = 'ls-output';
+            entries.forEach(function (entry) {
+                container.appendChild(makeEntry(entry[0], entry[1], 'span'));
+            });
+        } else {
+            container.className = 'ls-output-long';
+            entries.forEach(function (entry) {
+                var name = entry[0];
+                var child = entry[1];
+                var symlink = child.type === 'symlink' ? ' -> ' + child.target : '';
+                var line = document.createElement('div');
+                line.className = 'ls-entry-line';
+
+                var entryEl = makeEntry(name, child, 'span');
+                var date = child.date || '          ';
+
+                var datePart = document.createElement('span');
+                datePart.className = 'ls-date';
+                datePart.textContent = date + '  ';
+                line.appendChild(datePart);
+                line.appendChild(entryEl);
+                if (symlink) {
+                    line.appendChild(document.createTextNode(symlink));
+                }
+                container.appendChild(line);
+            });
+        }
+
+        return container;
     }
 
     // Get completions for a path argument, walking into subdirectories
@@ -370,7 +423,12 @@
                 targetNode = getCurrentNode();
             }
 
-            showOutput(listChildren(targetNode, flags), 'ok');
+            var result = listChildren(targetNode, flags);
+            if (!result) {
+                showOutput('not a directory', 'err');
+            } else {
+                showDomOutput(result);
+            }
             input.value = '';
             return;
         }
@@ -448,6 +506,30 @@
         var template = document.createElement('template');
         template.innerHTML = sourceHtml;
         resultDiv.appendChild(template.content.cloneNode(true));
+
+        var inputLine = input.closest('.input-line');
+        inputLine.parentNode.insertBefore(cmdLine, inputLine);
+        inputLine.parentNode.insertBefore(resultDiv, inputLine);
+        input.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showDomOutput(element) {
+        var cmdLine = document.createElement('div');
+        cmdLine.className = 'prompt';
+        var pathSpan = document.createElement('span');
+        pathSpan.className = 'path';
+        pathSpan.textContent = promptPath;
+        var dollarSpan = document.createElement('span');
+        dollarSpan.className = 'dollar';
+        dollarSpan.textContent = '$';
+        cmdLine.appendChild(pathSpan);
+        cmdLine.appendChild(document.createTextNode(' '));
+        cmdLine.appendChild(dollarSpan);
+        cmdLine.appendChild(document.createTextNode(' ' + input.value));
+
+        var resultDiv = document.createElement('div');
+        resultDiv.className = 'cmd-output';
+        resultDiv.appendChild(element);
 
         var inputLine = input.closest('.input-line');
         inputLine.parentNode.insertBefore(cmdLine, inputLine);
