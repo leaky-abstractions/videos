@@ -46,10 +46,14 @@ function buildFiletree() {
         if (!existsSync(blogPath)) continue;
 
         const meta = yaml.load(readFileSync(metaFile, 'utf8'));
+        const { data: blogFm } = matter(readFileSync(blogPath, 'utf8'));
         episodesChildren[slug + '.md'] = {
             type: 'file',
             url: '/episodes/' + slug + '/',
             date: meta.date || null,
+            title: meta.title || slug,
+            summary: blogFm.summary || '',
+            tags: blogFm.tags || [],
         };
     }
 
@@ -77,17 +81,27 @@ function buildFiletree() {
             if (!existsSync(blogPath)) continue;
 
             const epMeta = yaml.load(readFileSync(epMetaFile, 'utf8'));
+            const { data: epBlogFm } = matter(readFileSync(blogPath, 'utf8'));
             seriesChildren[epSlug + '.md'] = {
                 type: 'file',
                 url: '/episodes/' + slug + '/' + epSlug + '/',
                 date: epMeta.date || null,
+                title: epMeta.title || epSlug,
+                summary: epBlogFm.summary || '',
+                tags: epBlogFm.tags || [],
             };
         }
 
+        // Find latest episode date
+        const epDates = Object.values(seriesChildren).map(function (c) { return c.date || ''; }).sort();
         episodesChildren[slug] = {
             type: 'dir',
             url: '/episodes/' + slug + '/',
             children: seriesChildren,
+            title: seriesMeta.title || slug,
+            description: seriesMeta.description || '',
+            date: epDates[epDates.length - 1] || null,
+            episodeCount: Object.values(seriesChildren).filter(function (c) { return c.type === 'file' && c.url; }).length,
         };
     }
 
@@ -112,6 +126,9 @@ function buildFiletree() {
                 type: 'file',
                 url: '/' + dirName + '/' + slug + '/',
                 date: fm.date ? new Date(fm.date).toISOString().slice(0, 10) : null,
+                title: fm.title || slug.replace(/-/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); }),
+                summary: fm.summary || '',
+                tags: fm.tags || [],
             };
         }
         contentDirs[dirName] = {

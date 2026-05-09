@@ -10,8 +10,8 @@ eleventyComputed:
     virtualPath: "~/{{ contentPage.dirName }}/{{ contentPage.slug }}.md"
 ---
 
-<div class="section">
-    <div class="prompt"><span class="path">~/{{ contentPage.dirName }}</span> <span class="dollar">$</span> cat {{ contentPage.slug }}.md</div>
+<div class="section" data-pagefind-body>
+    <div class="prompt" data-pagefind-ignore><span class="path">~/{{ contentPage.dirName }}</span> <span class="dollar">$</span> cat {{ contentPage.slug }}.md</div>
     <div class="post-content">
         {{ contentPage.content | md | safe }}
     </div>

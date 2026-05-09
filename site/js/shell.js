@@ -66,6 +66,94 @@
         return 'fa-solid fa-file-lines';
     }
 
+    function makeEntry(name, child, tag) {
+        var suffix = (child.type === 'dir' || child.type === 'symlink') && !name.endsWith('/') ? '/' : '';
+        var el = document.createElement(child.url ? 'a' : tag);
+        el.className = 'ls-entry ls-type-' + (child.type || 'file') + (child.external ? ' ls-external' : '');
+        if (child.url) {
+            el.href = child.url;
+            if (child.external) {
+                el.target = '_blank';
+                el.rel = 'noopener';
+            }
+        }
+
+        var icon = document.createElement('i');
+        icon.className = getIcon(child, name);
+        el.appendChild(icon);
+        el.appendChild(document.createTextNode(' '));
+
+        var text = document.createElement('span');
+        text.className = 'link-text';
+        text.textContent = name + suffix;
+        el.appendChild(text);
+
+        return el;
+    }
+
+    function makePostCard(name, child) {
+        var isSeries = child.type === 'dir' && child.title;
+        var post = document.createElement('div');
+        post.className = 'post' + (isSeries ? ' series' : '');
+
+        var titleDiv = document.createElement('div');
+        titleDiv.className = 'post-title';
+        var link = document.createElement('a');
+        link.href = child.url;
+
+        var icon = document.createElement('i');
+        icon.className = getIcon(child, name);
+        link.appendChild(icon);
+        link.appendChild(document.createTextNode(' '));
+
+        var text = document.createElement('span');
+        text.className = 'link-text';
+        text.textContent = child.title || name;
+        link.appendChild(text);
+        titleDiv.appendChild(link);
+        post.appendChild(titleDiv);
+
+        var metaDiv = document.createElement('div');
+        metaDiv.className = 'post-meta';
+
+        if (child.date) {
+            var dateSpan = document.createElement('span');
+            dateSpan.className = 'date';
+            dateSpan.textContent = child.date;
+            metaDiv.appendChild(dateSpan);
+        }
+
+        var desc = isSeries ? child.description : child.summary;
+        if (desc) {
+            if (child.date) metaDiv.appendChild(document.createTextNode(' — '));
+            metaDiv.appendChild(document.createTextNode(desc));
+        }
+
+        if (child.tags && child.tags.length) {
+            child.tags.forEach(function (tag) {
+                var tagSpan = document.createElement('span');
+                tagSpan.className = 'tag';
+                tagSpan.textContent = tag;
+                metaDiv.appendChild(tagSpan);
+            });
+        }
+
+        if (isSeries && child.episodeCount) {
+            if (desc) metaDiv.appendChild(document.createTextNode(' '));
+            var countSpan = document.createElement('span');
+            countSpan.className = 'tag tag-count';
+            countSpan.textContent = child.episodeCount + ' episode' + (child.episodeCount !== 1 ? 's' : '');
+            metaDiv.appendChild(countSpan);
+        }
+
+        post.appendChild(metaDiv);
+        return post;
+    }
+
+    function hasRichEntries(node) {
+        return Object.values(node.children).some(function (c) { return c.title; });
+    }
+
     function listChildren(node, flags) {
         if (!node || !node.children) return null;
         var entries = Object.entries(node.children);
@@ -80,34 +168,19 @@
             });
         }
 
-        var longFormat = flags.indexOf('l') !== -1;
         var container = document.createElement('div');
 
-        function makeEntry(name, child, tag) {
-            var suffix = (child.type === 'dir' || child.type === 'symlink') && !name.endsWith('/') ? '/' : '';
-            var el = document.createElement(child.url ? 'a' : tag);
-            el.className = 'ls-entry ls-type-' + (child.type || 'file') + (child.external ? ' ls-external' : '');
-            if (child.url) {
-                el.href = child.url;
-                if (child.external) {
-                    el.target = '_blank';
-                    el.rel = 'noopener';
-                }
-            }
-
-            var icon = document.createElement('i');
-            icon.className = getIcon(child, name);
-            el.appendChild(icon);
-            el.appendChild(document.createTextNode(' '));
-
-            var text = document.createElement('span');
-            text.className = 'link-text';
-            text.textContent = name + suffix;
-            el.appendChild(text);
-
-            return el;
+        // Rich listing for directories with metadata (episodes, content pages)
+        if (hasRichEntries(node)) {
+            entries.forEach(function (entry) {
+                if (entry[0] === 'README.md') return;
+                container.appendChild(makePostCard(entry[0], entry[1]));
+            });
+            return container;
         }
 
+        // Flat listing for plain directories (links, etc.)
+        var longFormat = flags.indexOf('l') !== -1;
         if (!longFormat) {
             container.className = 'ls-output';
             entries.forEach(function (entry) {
@@ -170,6 +243,7 @@
     function isValidCommand(cmd) {
         var lower = cmd.toLowerCase();
         if (lower === 'help' || lower === 'ls' || lower === 'cd' || lower === 'cd ~' || lower === 'cd ..') return true;
+        if (lower.startsWith('grep ') && lower.length > 5) return true;
         if (lower === 'theme' || lower === 'themes') return true;
         if (lower.startsWith('theme ') && THEMES[lower.substring(6).trim()]) return true;
 
@@ -191,7 +265,7 @@
         var lower = val.toLowerCase();
 
         // Static commands
-        var statics = ['help', 'ls', 'cd ', 'cd ..', 'cd ~', 'cat ', 'theme', 'theme '];
+        var statics = ['help', 'ls', 'cd ', 'cd ..', 'cd ~', 'cat ', 'grep ', 'theme', 'theme '];
         for (var i = 0; i < statics.length; i++) {
             if (statics[i].startsWith(lower) && statics[i] !== lower) {
                 return statics[i];
@@ -318,6 +392,7 @@
                     '  cd ..           go up one level',
                     '  cd ~            go home',
                     '  cat <file>      read a file',
+                    '  grep <term>     search all content',
                     '  theme           list available themes',
                     '  theme <name>    apply a theme',
                     '  clear           reset terminal',
@@ -454,11 +529,65 @@
             return;
         }
 
+        if (cmd.startsWith('grep ')) {
+            var query = raw.substring(5).trim();
+            if (!query) {
+                showOutput('usage: grep <term>', 'err');
+                input.value = '';
+                return;
+            }
+            var savedCmd = input.value;
+            input.value = '';
+
+            (async function () {
+                try {
+                    if (!window._pagefind) {
+                        window._pagefind = await import('/pagefind/pagefind.js');
+                    }
+                    var pf = window._pagefind;
+                    var search = await pf.search(query);
+                    if (search.results.length === 0) {
+                        showOutput('grep: no results for "' + query + '"', 'err', savedCmd);
+                        return;
+                    }
+                    var results = await Promise.all(
+                        search.results.slice(0, 10).map(function (r) { return r.data(); })
+                    );
+
+                    var container = document.createElement('div');
+                    results.forEach(function (data) {
+                        var child = {
+                            type: 'file',
+                            url: data.url,
+                            title: data.meta.title || data.url,
+                            tags: [],
+                        };
+                        var card = makePostCard('result.md', child);
+                        if (data.excerpt) {
+                            var excerpt = document.createElement('div');
+                            excerpt.className = 'grep-excerpt';
+                            // Pagefind excerpts contain only <mark> tags from its own index
+                            var template = document.createElement('template');
+                            template.innerHTML = data.excerpt;
+                            excerpt.appendChild(template.content.cloneNode(true));
+                            card.appendChild(excerpt);
+                        }
+                        container.appendChild(card);
+                    });
+
+                    showDomOutput(container, savedCmd);
+                } catch (e) {
+                    showOutput('grep: search unavailable', 'err', savedCmd);
+                }
+            })();
+            return;
+        }
+
         showOutput('command not found: ' + raw, 'err');
         input.value = '';
     });
 
-    function showOutput(text, type) {
+    function showOutput(text, type, cmdText) {
         var cmdLine = document.createElement('div');
         cmdLine.className = 'prompt';
         var pathSpan = document.createElement('span');
@@ -470,7 +599,7 @@
         cmdLine.appendChild(pathSpan);
         cmdLine.appendChild(document.createTextNode(' '));
         cmdLine.appendChild(dollarSpan);
-        cmdLine.appendChild(document.createTextNode(' ' + input.value));
+        cmdLine.appendChild(document.createTextNode(' ' + (cmdText || input.value)));
 
         var resultDiv = document.createElement('div');
         resultDiv.className = 'cmd-output';
@@ -513,7 +642,7 @@
         input.scrollIntoView({ behavior: 'smooth' });
     }
 
-    function showDomOutput(element) {
+    function showDomOutput(element, cmdText) {
         var cmdLine = document.createElement('div');
         cmdLine.className = 'prompt';
         var pathSpan = document.createElement('span');
@@ -525,7 +654,7 @@
         cmdLine.appendChild(pathSpan);
         cmdLine.appendChild(document.createTextNode(' '));
         cmdLine.appendChild(dollarSpan);
-        cmdLine.appendChild(document.createTextNode(' ' + input.value));
+        cmdLine.appendChild(document.createTextNode(' ' + (cmdText || input.value)));
 
         var resultDiv = document.createElement('div');
         resultDiv.className = 'cmd-output';

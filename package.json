@@ -9,7 +9,7 @@
         "dev:scenes": "vite",
         "build:scenes": "vite build",
         "dev:blog": "eleventy --serve",
-        "build:blog": "eleventy",
+        "build:blog": "eleventy && pagefind --site _site --root-selector .terminal-body",
         "validate": "bun scripts/validate-content.ts",
         "prebuild": "bun run validate",
         "build": "bun run build:blog"
@@ -32,6 +32,7 @@
         "fast-glob": "^3.0.0",
         "gray-matter": "^4.0.0",
         "js-yaml": "^4.0.0",
+        "pagefind": "^1.5.2",
         "prettier": "^3.0.0",
         "typescript": "^5.0.0",
         "vite": "^5.0.0"

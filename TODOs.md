@@ -1,8 +1,5 @@
 Terminal immersion:
-- [ ] Typing animation on the prompt commands ($ cat welcome.md) — animate them letter by letter on page load,
-like someone's typing
 - [x] Blinking cursor on the shell input — a classic terminal touch you're missing
-- [ ] Terminal startup message — a brief ASCII art or MOTD-style greeting on first visit
 - [x] 404 page — command not found themed error page
 
 Content & navigation:

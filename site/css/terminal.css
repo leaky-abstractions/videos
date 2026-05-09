@@ -599,6 +599,131 @@ a.ls-entry:hover .link-text {
     color: var(--base0E);
 }
 
+.search-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 100;
+    justify-content: center;
+    padding-top: 15vh;
+}
+
+.search-overlay.open {
+    display: flex;
+}
+
+.search-modal {
+    background: var(--base00);
+    border: 1px solid var(--base02);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 560px;
+    max-height: 60vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.search-input-line {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--base02);
+    gap: 8px;
+}
+
+.search-input-line .prompt-prefix {
+    color: var(--base03);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.search-input-line .prompt-prefix .path {
+    color: var(--base0B);
+}
+
+.search-input-line .prompt-prefix .dollar {
+    color: var(--base0D);
+}
+
+.search-input-line input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--base07);
+    font-family: inherit;
+    font-size: 0.85rem;
+    flex: 1;
+    caret-color: var(--base07);
+}
+
+.search-input-line input::placeholder {
+    color: var(--base03);
+}
+
+.search-results {
+    padding: 8px 0;
+}
+
+.search-results .search-result {
+    display: block;
+    padding: 8px 16px;
+    text-decoration: none;
+    color: var(--base05);
+}
+
+.search-results .search-result:hover,
+.search-results .search-result.active {
+    background: var(--base02);
+    text-decoration: none;
+}
+
+.search-result-title {
+    color: var(--base0D);
+    font-size: 0.85rem;
+}
+
+.search-result-title i {
+    margin-right: 4px;
+}
+
+.search-result-excerpt {
+    color: var(--base03);
+    font-size: 0.78rem;
+    margin-top: 2px;
+}
+
+.search-result-excerpt mark {
+    background: var(--base02);
+    color: var(--base0A);
+    border-radius: 2px;
+    padding: 0 2px;
+}
+
+.search-results-empty {
+    padding: 12px 16px;
+    color: var(--base03);
+    font-size: 0.85rem;
+}
+
+.grep-excerpt {
+    color: var(--base03);
+    font-size: 0.78rem;
+    margin-top: 2px;
+    margin-bottom: 8px;
+    padding-left: 20px;
+}
+
+.grep-excerpt mark {
+    background: var(--base02);
+    color: var(--base0A);
+    border-radius: 2px;
+    padding: 0 2px;
+}
+
 .cmd-output .ok {
     color: var(--base0B);
 }
