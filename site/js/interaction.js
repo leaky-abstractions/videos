@@ -279,20 +279,77 @@
     }
     document.getElementById('prompt-path').textContent = pp;
 
-    // --- Mobile header hide/show on scroll ---
-    if (window.innerWidth <= 600) {
-        var chrome = document.querySelector('.terminal-chrome');
-        var scroller = document.querySelector('.terminal');
-        var lastScrollTop = 0;
+    // --- Reading progress & mobile header hide/show ---
+    var isMobilePage = window.innerWidth <= 600;
+    var progressBar = document.getElementById('reading-progress');
+    var hasContent = !!document.querySelector('.post-content');
+    var chrome = document.querySelector('.terminal-chrome');
+    var scroller = isMobilePage ? document.querySelector('.terminal') : document.querySelector('.terminal-body');
+    var lastScrollTop = 0;
 
+    if (scroller) {
         scroller.addEventListener('scroll', function () {
             var st = scroller.scrollTop;
-            if (st > lastScrollTop && st > chrome.offsetHeight) {
-                chrome.classList.add('chrome-hidden');
-            } else if (st < lastScrollTop) {
-                chrome.classList.remove('chrome-hidden');
+            var scrollHeight = scroller.scrollHeight - scroller.clientHeight;
+
+            // Reading progress (only on content pages)
+            if (hasContent && progressBar && scrollHeight > 0) {
+                var progress = Math.min((st / scrollHeight) * 100, 100);
+                progressBar.style.width = progress + '%';
             }
+
+            // Mobile header hide/show
+            if (isMobilePage && chrome) {
+                if (st > lastScrollTop && st > chrome.offsetHeight) {
+                    chrome.classList.add('chrome-hidden');
+                } else if (st < lastScrollTop) {
+                    chrome.classList.remove('chrome-hidden');
+                }
+            }
+
             lastScrollTop = st;
         }, { passive: true });
+    }
+
+    // --- Mobile swipe for prev/next episode ---
+    if (isMobilePage) {
+        var touchStartX = 0;
+        var touchStartY = 0;
+        var terminalBody = document.querySelector('.terminal-body');
+
+        if (terminalBody) {
+            terminalBody.addEventListener('touchstart', function (e) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+
+            terminalBody.addEventListener('touchend', function (e) {
+                var dx = e.changedTouches[0].clientX - touchStartX;
+                var dy = e.changedTouches[0].clientY - touchStartY;
+
+                // Only trigger on horizontal swipes (not vertical scrolling)
+                if (Math.abs(dx) < 80 || Math.abs(dy) > Math.abs(dx)) return;
+
+                var backLink = document.querySelector('.back-link');
+                if (!backLink) return;
+
+                if (dx > 0) {
+                    // Swipe right → previous episode
+                    var prev = backLink.querySelector('a[href*="cat "]') || backLink.querySelector('a:nth-child(2)');
+                    if (prev && prev.textContent.indexOf('←') > -1 && prev.textContent.indexOf('cat') > -1) {
+                        window.location.href = prev.href;
+                    }
+                } else {
+                    // Swipe left → next episode
+                    var links = backLink.querySelectorAll('a');
+                    for (var i = 0; i < links.length; i++) {
+                        if (links[i].textContent.indexOf('→') > -1) {
+                            window.location.href = links[i].href;
+                            break;
+                        }
+                    }
+                }
+            }, { passive: true });
+        }
     }
 })();

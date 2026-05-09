@@ -66,7 +66,19 @@ a:hover {
     gap: 10px;
     border-bottom: 1px solid var(--base02);
     flex-shrink: 0;
+    position: relative;
 }
+
+.reading-progress {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    height: 2px;
+    background: var(--base0D);
+    width: 0%;
+    transition: width 0.1s linear;
+}
+
 
 .terminal-chrome .dots {
     display: flex;
@@ -839,7 +851,7 @@ a.ls-entry:hover .link-text {
     }
 
     .terminal-chrome.chrome-hidden {
-        transform: translateY(-100%);
+        transform: translateY(calc(-100% + 1px));
     }
 
     .terminal-chrome .dots {
