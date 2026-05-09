@@ -406,13 +406,31 @@ h2,
     font-family: inherit;
     font-size: 0.85rem;
     width: 100%;
-    caret-color: var(--base07);
+    caret-color: transparent;
     position: relative;
     z-index: 1;
 }
 
 .input-line input.valid {
     color: var(--base0B);
+}
+
+.input-line .cursor {
+    display: inline-block;
+    width: 0.5em;
+    height: 1.1em;
+    background: var(--base07);
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+    position: absolute;
+    top: 0;
+    z-index: 2;
+    pointer-events: none;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
 }
 
 .input-line .autocomplete-hint {

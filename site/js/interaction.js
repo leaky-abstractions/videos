@@ -1,7 +1,6 @@
 (function () {
     // --- Breadcrumbs ---
     var parts = CURRENT_PATH.split('/').filter(Boolean);
-    if (parts[0] === '~') parts[0] = 'leaky-abstractions';
     var bc = document.getElementById('breadcrumbs');
     var tree = FILETREE['~'];
     var urls = ['/'];
@@ -95,6 +94,24 @@
             }
         });
     }
+
+    // --- Blinking cursor ---
+    var cursor = document.getElementById('shell-cursor');
+    var measure = document.createElement('span');
+    measure.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;font:inherit;font-size:0.85rem;';
+    document.body.appendChild(measure);
+
+    function updateCursor() {
+        measure.textContent = shellInput.value.substring(0, shellInput.selectionStart) || '';
+        cursor.style.left = measure.offsetWidth + 'px';
+    }
+
+    shellInput.addEventListener('input', updateCursor);
+    shellInput.addEventListener('keyup', updateCursor);
+    shellInput.addEventListener('click', updateCursor);
+    shellInput.addEventListener('focus', function () { cursor.style.display = ''; updateCursor(); });
+    shellInput.addEventListener('blur', function () { cursor.style.display = 'none'; });
+    updateCursor();
 
     // --- Prompt path ---
     var pp = CURRENT_PATH;
