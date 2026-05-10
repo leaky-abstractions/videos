@@ -1,0 +1,27 @@
+---json
+{
+  "layout": false,
+  "permalink": "robots.txt",
+  "eleventyExcludeFromCollections": true
+}
+---
+# Default: open to all well-behaved crawlers (Google, Bing, RSS readers,
+# AI search bots that cite sources like OAI-SearchBot, PerplexityBot, etc.)
+User-agent: *
+Allow: /
+
+# Block AI training crawlers — content is here to be read and cited,
+# not absorbed into model weights without attribution.
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: anthropic-ai
+User-agent: Google-Extended
+User-agent: CCBot
+User-agent: Bytespider
+User-agent: Meta-ExternalAgent
+User-agent: Applebot-Extended
+User-agent: Diffbot
+User-agent: cohere-ai
+Disallow: /
+
+Sitemap: {{ siteUrl }}/sitemap.xml

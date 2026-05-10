@@ -8,25 +8,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://leaky-abstractions.dev/</loc>
+    <loc>{{ siteUrl }}/</loc>
   </url>
   {%- for post in collections.posts %}
   <url>
-    <loc>https://leaky-abstractions.dev{{ post.url }}</loc>
+    <loc>{{ siteUrl }}{{ post.url }}</loc>
     <lastmod>{{ post.date | date }}</lastmod>
   </url>
   {%- endfor %}
   {%- for series in allSeriesData %}
   <url>
-    <loc>https://leaky-abstractions.dev/episodes/{{ series.slug }}/</loc>
+    <loc>{{ siteUrl }}/episodes/{{ series.slug }}/</loc>
   </url>
   {%- endfor %}
   <url>
-    <loc>https://leaky-abstractions.dev/episodes/</loc>
+    <loc>{{ siteUrl }}/episodes/</loc>
   </url>
   {%- for page in contentPages %}
   <url>
-    <loc>https://leaky-abstractions.dev{{ page.url }}</loc>
+    <loc>{{ siteUrl }}{{ page.url }}</loc>
     {%- if page.date %}
     <lastmod>{{ page.date }}</lastmod>
     {%- endif %}

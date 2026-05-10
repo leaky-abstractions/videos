@@ -13,6 +13,8 @@ const md = markdownIt({ html: true, linkify: true });
 // Set via ELEVENTY_PATH_PREFIX env var, defaults to '/' for local dev
 const PATH_PREFIX = (process.env.ELEVENTY_PATH_PREFIX || '').replace(/\/$/, '');
 
+const SITE_URL = 'https://leakyabstractions.dev';
+
 function prefixUrl(url) {
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
     return PATH_PREFIX + url;
@@ -410,6 +412,9 @@ export default function (eleventyConfig) {
 
     // Expose path prefix to templates
     eleventyConfig.addGlobalData('pathPrefix', PATH_PREFIX || '');
+
+    // Expose canonical site URL to templates
+    eleventyConfig.addGlobalData('siteUrl', SITE_URL);
 
     return {
         pathPrefix: PATH_PREFIX || '/',

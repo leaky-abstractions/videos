@@ -1,7 +1,7 @@
 Practical:
 - [ ] Favicon — browsers show a blank icon in tabs and bookmarks
-- [ ] robots.txt — tell crawlers about the sitemap and set rules
-- [ ] Canonical URLs — <link rel="canonical"> to avoid duplicate content issues
+- [x] robots.txt — tell crawlers about the sitemap and set rules
+- [x] Canonical URLs — <link rel="canonical"> to avoid duplicate content issues
 
 Content UX:
 - [ ] Estimated reading time — small "3 min read" next to the date on posts
