@@ -301,6 +301,10 @@ function buildSeriesData() {
             });
         }
         episodes.sort((a, b) => a.episode - b.episode);
+        const total = episodes.length;
+        episodes.forEach((ep, i) => {
+            ep.seriesPosition = (i + 1) + ' of ' + total;
+        });
 
         return {
             slug,
@@ -311,6 +315,84 @@ function buildSeriesData() {
             url: prefixUrl('/episodes/' + slug + '/'),
         };
     });
+}
+
+// Flat list of every episode (standalone + series) with display fields and
+// metadata needed for related-episodes scoring. Series episodes inherit
+// seriesPosition (e.g. "1 of 3") from the already-built seriesData.
+function buildAllEpisodesData(seriesData) {
+    const items = [];
+
+    const standaloneMetaFiles = fg.sync('episodes/*/meta.yml');
+    for (const metaFile of standaloneMetaFiles) {
+        const dir = dirname(metaFile);
+        const slug = basename(dir);
+        const blogPath = dir + '/blog.md';
+        if (!existsSync(blogPath)) continue;
+        const meta = yaml.load(readFileSync(metaFile, 'utf8'));
+        const { data: fm, content: body } = matter(readFileSync(blogPath, 'utf8'));
+        items.push({
+            slug,
+            title: meta.title || slug,
+            date: meta.date ? new Date(meta.date).toISOString().slice(0, 10) : null,
+            summary: fm.summary || '',
+            tags: fm.tags || [],
+            readingTime: computeReadingTime(body),
+            url: prefixUrl('/episodes/' + slug + '/'),
+            inputPath: blogPath,
+            seriesSlug: null,
+            seriesPosition: null,
+        });
+    }
+
+    for (const series of seriesData) {
+        for (const ep of series.episodes) {
+            items.push({
+                slug: ep.slug,
+                title: ep.title,
+                date: ep.date,
+                summary: ep.summary,
+                tags: ep.tags,
+                readingTime: ep.readingTime,
+                url: ep.url,
+                inputPath: 'episodes/_series/' + series.slug + '/' + ep.slug + '/blog.md',
+                seriesSlug: series.slug,
+                seriesPosition: ep.seriesPosition,
+            });
+        }
+    }
+
+    return items;
+}
+
+// For each episode, compute its top 3 related episodes by tag-overlap score
+// (recency tiebreaker). Excludes self and same-series. Falls back to the
+// 3 most recent (also exclusions applied) when no tag overlap exists.
+function buildRelatedByInputPath(allEpisodes) {
+    const map = {};
+    for (const current of allEpisodes) {
+        const currentTags = new Set(current.tags);
+        const candidates = allEpisodes
+            .filter((e) => e.inputPath !== current.inputPath)
+            .filter((e) => !current.seriesSlug || e.seriesSlug !== current.seriesSlug);
+
+        const scored = candidates
+            .map((e) => ({ ...e, overlap: e.tags.filter((t) => currentTags.has(t)).length }))
+            .sort((a, b) => {
+                if (b.overlap !== a.overlap) return b.overlap - a.overlap;
+                return (b.date || '').localeCompare(a.date || '');
+            });
+
+        const hasMatch = scored.length > 0 && scored[0].overlap > 0;
+        const items = hasMatch ? scored.filter((e) => e.overlap > 0).slice(0, 3) : scored.slice(0, 3);
+
+        map[current.inputPath] = {
+            items,
+            isFallback: !hasMatch,
+            searchTags: current.tags,
+        };
+    }
+    return map;
 }
 
 export default function (eleventyConfig) {
@@ -391,6 +473,9 @@ export default function (eleventyConfig) {
     const seriesData = buildSeriesData();
     eleventyConfig.addGlobalData('allSeriesData', seriesData);
 
+    // Related episodes — pre-computed once, looked up by inputPath at render time.
+    const relatedByInputPath = buildRelatedByInputPath(buildAllEpisodesData(seriesData));
+
     // Content directory pages (legal/, etc.)
     const contentDirData = buildContentDirData();
     // Flatten into individual pages for pagination
@@ -463,6 +548,28 @@ export default function (eleventyConfig) {
                 seriesSlug,
                 index: idx + 1,
                 total: series.episodes.length,
+            };
+        },
+        relatedEpisodes(data) {
+            const inputPath = data.page?.inputPath;
+            if (!inputPath || !inputPath.includes('blog.md')) return undefined;
+            const normalized = inputPath.replace(/^\.\//, '');
+            return relatedByInputPath[normalized];
+        },
+        seriesNav(data) {
+            const inputPath = data.page?.inputPath;
+            if (!inputPath || !inputPath.includes('_series/') || !inputPath.includes('blog.md')) {
+                return undefined;
+            }
+            const epSlug = basename(dirname(inputPath));
+            const seriesSlug = basename(dirname(dirname(inputPath)));
+            const series = seriesData.find((s) => s.slug === seriesSlug);
+            if (!series) return undefined;
+            const idx = series.episodes.findIndex((e) => e.slug === epSlug);
+            if (idx === -1) return undefined;
+            return {
+                prev: idx > 0 ? series.episodes[idx - 1] : null,
+                next: idx < series.episodes.length - 1 ? series.episodes[idx + 1] : null,
             };
         },
     });

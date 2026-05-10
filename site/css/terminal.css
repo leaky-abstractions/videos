@@ -201,6 +201,12 @@ a:hover {
     color: var(--base0D);
 }
 
+.prompt .prompt-comment {
+    font-style: italic;
+    color: var(--base0A);
+    margin-left: 0.5em;
+}
+
 .section {
     margin-bottom: 24px;
 }
@@ -324,9 +330,6 @@ h2,
     margin-left: 0;
 }
 
-.frontmatter .fm-episode {
-    color: var(--base0E);
-}
 
 .post-content {
     color: var(--base05);

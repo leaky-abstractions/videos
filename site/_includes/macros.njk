@@ -44,8 +44,8 @@
      readingTime    integer minutes                      (optional)
      tags           array of strings                     (optional, omitted if empty)
      series         object { seriesSlug, index, total }  (optional)
-                    Renders as two rows: `series:` (slug as badge) and
-                    `episode:` (N of M, magenta accent text).
+                    Renders as one row: `series: [slug] [N of M]`
+                    (cyan series tag + magenta position badge).
 #}
 {% macro frontmatterBlock(date=null, readingTime=null, tags=[], series=null) %}
 <div class="frontmatter">
@@ -60,8 +60,7 @@
     <div class="fm-row"><span class="fm-key">tags:</span><span class="fm-tags">{% for tag in tags %}<span class="tag">{{ tag }}</span>{% endfor %}</span></div>
     {%- endif %}
     {%- if series %}
-    <div class="fm-row"><span class="fm-key">series:</span><span class="fm-series"><span class="tag">{{ series.seriesSlug }}</span></span></div>
-    <div class="fm-row"><span class="fm-key">episode:</span><span class="fm-episode">{{ series.index }} of {{ series.total }}</span></div>
+    <div class="fm-row"><span class="fm-key">series:</span><span class="fm-series"><span class="tag">{{ series.seriesSlug }}</span><span class="tag tag-count">{{ series.index }} of {{ series.total }}</span></span></div>
     {%- endif %}
     <div class="fm-delim">---</div>
 </div>

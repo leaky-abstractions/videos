@@ -88,34 +88,59 @@
                 {% set parentUrl = vDir | replace("~", "") | default("/") %}
                 {% if parentUrl != "/" %}{% set parentUrl = parentUrl + "/" %}{% endif %}
                 {% set parentUrl = pathPrefix + parentUrl %}
-                {% from "macros.njk" import catSection, frontmatterBlock %}
+                {% from "macros.njk" import catSection, frontmatterBlock, backLink %}
+                {% from "post-card.njk" import postCard %}
                 {% call catSection(vDir, catSlug + '.md', { pagefind: true, body: 'post-content' }) -%}
                 {{ frontmatterBlock(date=page.date | date, readingTime=readingTime, tags=tags, series=seriesProgress) }}
                 {{ content | safe }}
                 {%- endcall %}
-                <div class="back-link">
-                    <a href="{{ parentUrl }}">&larr; ls -lt</a>
-                    {% if "_series/" in page.inputPath %}
-                    {% set seriesSlug = episodeSlug.split("/") | first %}
-                    {% for series in allSeriesData %}
-                    {% if series.slug == seriesSlug %}
-                    {% for ep in series.episodes %}
-                    {% if ep.slug == catSlug %}
-                    {% if loop.index0 > 0 %}
-                    {% set prevEp = series.episodes[loop.index0 - 1] %}
-                    <br><a href="{{ prevEp.url }}">&larr; cat {{ prevEp.slug }}.md</a>
+                {% if seriesNav and (seriesNav.prev or seriesNav.next) %}
+                <div class="section">
+                    <div class="prompt"><span class="path">{{ vDir }}</span> <span class="dollar">$</span> ls{% if seriesNav.prev %} {{ seriesNav.prev.slug }}.md{% endif %}{% if seriesNav.next %} {{ seriesNav.next.slug }}.md{% endif %} <span class="prompt-comment"># continue the series</span></div>
+                    {% if seriesNav.prev %}
+                    {{ postCard({
+                        kind: 'post',
+                        url: seriesNav.prev.url,
+                        title: seriesNav.prev.title,
+                        date: seriesNav.prev.date,
+                        readingTime: seriesNav.prev.readingTime,
+                        summary: seriesNav.prev.summary,
+                        tags: seriesNav.prev.tags,
+                        seriesPosition: 'prev · ' + seriesNav.prev.seriesPosition
+                    }) }}
                     {% endif %}
-                    {% set nextIdx = loop.index0 + 1 %}
-                    {% if nextIdx < series.episodes.length %}
-                    {% set nextEp = series.episodes[nextIdx] %}
-                    <br><a href="{{ nextEp.url }}">&rarr; cat {{ nextEp.slug }}.md</a>
-                    {% endif %}
-                    {% endif %}
-                    {% endfor %}
-                    {% endif %}
-                    {% endfor %}
+                    {% if seriesNav.next %}
+                    {{ postCard({
+                        kind: 'post',
+                        url: seriesNav.next.url,
+                        title: seriesNav.next.title,
+                        date: seriesNav.next.date,
+                        readingTime: seriesNav.next.readingTime,
+                        summary: seriesNav.next.summary,
+                        tags: seriesNav.next.tags,
+                        seriesPosition: 'next · ' + seriesNav.next.seriesPosition
+                    }) }}
                     {% endif %}
                 </div>
+                {% endif %}
+                {% if relatedEpisodes and relatedEpisodes.items.length %}
+                <div class="section">
+                    <div class="prompt"><span class="path">{{ vDir }}</span> <span class="dollar">$</span> {% if relatedEpisodes.isFallback %}ls -lt ~/episodes | head -3{% else %}grep -rlE "({{ relatedEpisodes.searchTags | join('|') }})" ~/episodes{% endif %} <span class="prompt-comment"># {% if relatedEpisodes.isFallback %}more episodes{% else %}related episodes{% endif %}</span></div>
+                    {% for ep in relatedEpisodes.items %}
+                    {{ postCard({
+                        kind: 'post',
+                        url: ep.url,
+                        title: ep.title,
+                        date: ep.date,
+                        readingTime: ep.readingTime,
+                        summary: ep.summary,
+                        tags: ep.tags,
+                        seriesPosition: ep.seriesPosition
+                    }) }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {{ backLink(parentUrl, 'ls -lt') }}
                 {% else %}
                 {{ content | safe }}
                 {% endif %}

@@ -4,14 +4,15 @@
    makePostCard() — keep them in sync if the markup changes.
 
    Expected fields on `item`:
-     kind         'post' (default) | 'series'
-     url          required — link target (already path-prefixed)
-     title        required — display text
-     date         optional — yyyy-mm-dd string
-     readingTime  optional — integer minutes
-     summary      optional — description text
-     tags         optional — array of strings
-     episodeCount optional — for series rows; renders "N episodes" badge
+     kind            'post' (default) | 'series'
+     url             required — link target (already path-prefixed)
+     title           required — display text
+     date            optional — yyyy-mm-dd string
+     readingTime     optional — integer minutes
+     summary         optional — description text
+     tags            optional — array of strings (rendered cyan)
+     seriesPosition  optional — string like "2 of 3" (rendered magenta)
+     episodeCount    optional — for series rows; renders "N episodes" badge
 #}
 {% macro postCard(item) %}
 <div class="post{% if item.kind == 'series' %} series{% endif %}">
@@ -24,6 +25,7 @@
         {%- if item.summary and (item.date or item.readingTime) %} — {% endif -%}
         {{- item.summary -}}
         {%- for tag in item.tags %}<span class="tag">{{ tag }}</span>{% endfor -%}
+        {%- if item.seriesPosition %}<span class="tag tag-count">{{ item.seriesPosition }}</span>{% endif -%}
         {%- if item.episodeCount %} <span class="tag tag-count">{{ item.episodeCount }} episode{% if item.episodeCount != 1 %}s{% endif %}</span>{% endif -%}
     </div>
 </div>
