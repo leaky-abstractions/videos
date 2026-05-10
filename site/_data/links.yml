@@ -9,7 +9,7 @@
   target: '~/legal/'
   icon: fa-solid fa-scale-balanced
 - name: github
-  url: https://github.com/leaky-abstractions/videos
+  url: https://github.com/leaky-abstractions/content
   external: true
   icon: fa-brands fa-github
 - name: youtube
