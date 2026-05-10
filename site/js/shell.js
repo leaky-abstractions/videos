@@ -58,6 +58,22 @@
         return parts.join('/');
     }
 
+    function urlToVirtualPath(url) {
+        var normalized = url.replace(/\/$/, '') || '/';
+        var result = null;
+        function walk(node, vpath) {
+            var nodeUrl = (node.url || '').replace(/\/$/, '') || '/';
+            if (nodeUrl === normalized) result = vpath;
+            if (node.children) {
+                for (var name in node.children) {
+                    walk(node.children[name], vpath + '/' + name);
+                }
+            }
+        }
+        walk(FILETREE['~'], '~');
+        return result;
+    }
+
     function getIcon(child, name) {
         if (child.icon) return child.icon;
         if (child.type === 'dir') return 'fa-solid fa-folder';
@@ -556,6 +572,7 @@
 
                     var container = document.createElement('div');
                     results.forEach(function (data) {
+                        var vpath = urlToVirtualPath(data.url);
                         var child = {
                             type: 'file',
                             url: data.url,
@@ -563,6 +580,14 @@
                             tags: [],
                         };
                         var card = makePostCard('result.md', child);
+
+                        if (vpath) {
+                            var pathDiv = document.createElement('div');
+                            pathDiv.className = 'grep-path';
+                            pathDiv.textContent = vpath;
+                            card.insertBefore(pathDiv, card.querySelector('.post-meta'));
+                        }
+
                         if (data.excerpt) {
                             var excerpt = document.createElement('div');
                             excerpt.className = 'grep-excerpt';

@@ -1,1 +1,0 @@
-We should add the ability for the rendered blog on the website to be able to click a link and land on GitHub on for example https://github.com/leaky-abstractions/videos/blob/main/episodes/001-example-standalone and on that directory there should be a README for each episode. The readme should contain a short an concice premise of the video.

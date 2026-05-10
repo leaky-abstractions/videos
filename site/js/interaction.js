@@ -403,6 +403,7 @@
         if (link.origin && link.origin !== window.location.origin) return;
 
         e.preventDefault();
+        sessionStorage.setItem('navigating', '1');
         tBody.style.transform = 'translateY(-40px)';
         tBody.style.opacity = '0';
         setTimeout(function () {
@@ -410,15 +411,18 @@
         }, 100);
     });
 
-    // New content slides up from just below
-    tBody.style.transition = 'none';
-    tBody.style.transform = 'translateY(20px)';
-    tBody.style.opacity = '0';
-    requestAnimationFrame(function () {
+    // Only animate in if we came from a link navigation
+    if (sessionStorage.getItem('navigating')) {
+        sessionStorage.removeItem('navigating');
+        tBody.style.transition = 'none';
+        tBody.style.transform = 'translateY(20px)';
+        tBody.style.opacity = '0';
         requestAnimationFrame(function () {
-            tBody.style.transition = 'transform 0.1s ease-out, opacity 0.1s ease-out';
-            tBody.style.transform = '';
-            tBody.style.opacity = '1';
+            requestAnimationFrame(function () {
+                tBody.style.transition = 'transform 0.1s ease-out, opacity 0.1s ease-out';
+                tBody.style.transform = '';
+                tBody.style.opacity = '1';
+            });
         });
-    });
+    }
 })();
