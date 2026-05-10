@@ -11,7 +11,7 @@ const md = markdownIt({ html: true, linkify: true });
 
 // Path prefix for GitHub Pages subdirectory deployment
 // Set via ELEVENTY_PATH_PREFIX env var, defaults to '/' for local dev
-const PATH_PREFIX = (process.env.ELEVENTY_PATH_PREFIX || '/').replace(/\/$/, '');
+const PATH_PREFIX = (process.env.ELEVENTY_PATH_PREFIX || '').replace(/\/$/, '');
 
 function prefixUrl(url) {
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
@@ -341,7 +341,9 @@ export default function (eleventyConfig) {
                     if (!grouped[meta.series]) grouped[meta.series] = [];
                     grouped[meta.series].push(ep);
                 }
-            } catch {}
+            } catch (e) {
+                console.warn('Warning: could not read', metaPath, e.message);
+            }
         }
         for (const key of Object.keys(grouped)) {
             grouped[key].sort((a, b) => {
@@ -394,7 +396,9 @@ export default function (eleventyConfig) {
                 if (meta?.series) {
                     slug = meta.series + '/' + parentDir;
                 }
-            } catch {}
+            } catch (e) {
+                console.warn('Warning: could not read', metaPath, e.message);
+            }
 
             return '/episodes/' + slug + '/index.html';
         },

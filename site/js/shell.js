@@ -314,16 +314,16 @@
     var promptPath = getCurrentDir();
 
     // Command history (persists across page navigations within session)
-    var history = JSON.parse(sessionStorage.getItem('shellHistory') || '[]');
-    var historyIndex = history.length;
+    var cmdHistory = JSON.parse(sessionStorage.getItem('shellHistory') || '[]');
+    var historyIndex = cmdHistory.length;
     var savedInput = '';
 
     function pushHistory(cmd) {
-        if (cmd && (history.length === 0 || history[history.length - 1] !== cmd)) {
-            history.push(cmd);
-            sessionStorage.setItem('shellHistory', JSON.stringify(history));
+        if (cmd && (cmdHistory.length === 0 || cmdHistory[cmdHistory.length - 1] !== cmd)) {
+            cmdHistory.push(cmd);
+            sessionStorage.setItem('shellHistory', JSON.stringify(cmdHistory));
         }
-        historyIndex = history.length;
+        historyIndex = cmdHistory.length;
         savedInput = '';
     }
 
@@ -341,11 +341,11 @@
     input.addEventListener('keydown', function (e) {
         if (e.key === 'ArrowUp') {
             e.preventDefault();
-            if (history.length === 0) return;
-            if (historyIndex === history.length) savedInput = input.value;
+            if (cmdHistory.length === 0) return;
+            if (historyIndex === cmdHistory.length) savedInput = input.value;
             if (historyIndex > 0) {
                 historyIndex--;
-                input.value = history[historyIndex];
+                input.value = cmdHistory[historyIndex];
                 hint.textContent = '';
                 input.dispatchEvent(new Event('input'));
             }
@@ -354,11 +354,11 @@
 
         if (e.key === 'ArrowDown') {
             e.preventDefault();
-            if (historyIndex < history.length - 1) {
+            if (historyIndex < cmdHistory.length - 1) {
                 historyIndex++;
-                input.value = history[historyIndex];
+                input.value = cmdHistory[historyIndex];
             } else {
-                historyIndex = history.length;
+                historyIndex = cmdHistory.length;
                 input.value = savedInput;
             }
             hint.textContent = '';
@@ -374,7 +374,7 @@
             input.value = '';
             hint.textContent = '';
             input.classList.remove('valid');
-            historyIndex = history.length;
+            historyIndex = cmdHistory.length;
             savedInput = '';
             return;
         }
@@ -558,7 +558,7 @@
             (async function () {
                 try {
                     if (!window._pagefind) {
-                        window._pagefind = await import('/pagefind/pagefind.js');
+                        window._pagefind = await import(PATH_PREFIX + '/pagefind/pagefind.js');
                     }
                     var pf = window._pagefind;
                     var search = await pf.search(query);
@@ -612,7 +612,7 @@
         input.value = '';
     });
 
-    function showOutput(text, type, cmdText) {
+    function buildPromptLine(cmdText) {
         var cmdLine = document.createElement('div');
         cmdLine.className = 'prompt';
         var pathSpan = document.createElement('span');
@@ -625,69 +625,40 @@
         cmdLine.appendChild(document.createTextNode(' '));
         cmdLine.appendChild(dollarSpan);
         cmdLine.appendChild(document.createTextNode(' ' + (cmdText || input.value)));
+        return cmdLine;
+    }
 
+    function insertOutput(cmdLine, resultDiv) {
+        var inputLine = input.closest('.input-line');
+        inputLine.parentNode.insertBefore(cmdLine, inputLine);
+        inputLine.parentNode.insertBefore(resultDiv, inputLine);
+        input.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showOutput(text, type, cmdText) {
         var resultDiv = document.createElement('div');
         resultDiv.className = 'cmd-output';
         var span = document.createElement('span');
         span.className = type;
         span.textContent = text;
         resultDiv.appendChild(span);
-
-        var inputLine = input.closest('.input-line');
-        inputLine.parentNode.insertBefore(cmdLine, inputLine);
-        inputLine.parentNode.insertBefore(resultDiv, inputLine);
-        input.scrollIntoView({ behavior: 'smooth' });
+        insertOutput(buildPromptLine(cmdText), resultDiv);
     }
 
     function showHtmlOutput(sourceHtml) {
-        var cmdLine = document.createElement('div');
-        cmdLine.className = 'prompt';
-        var pathSpan = document.createElement('span');
-        pathSpan.className = 'path';
-        pathSpan.textContent = promptPath;
-        var dollarSpan = document.createElement('span');
-        dollarSpan.className = 'dollar';
-        dollarSpan.textContent = '$';
-        cmdLine.appendChild(pathSpan);
-        cmdLine.appendChild(document.createTextNode(' '));
-        cmdLine.appendChild(dollarSpan);
-        cmdLine.appendChild(document.createTextNode(' ' + input.value));
-
-        // Clone the rendered content to preserve styling
         // sourceHtml comes from the page's own rendered content, not user input
         var resultDiv = document.createElement('div');
         resultDiv.className = 'post-content';
         var template = document.createElement('template');
         template.innerHTML = sourceHtml;
         resultDiv.appendChild(template.content.cloneNode(true));
-
-        var inputLine = input.closest('.input-line');
-        inputLine.parentNode.insertBefore(cmdLine, inputLine);
-        inputLine.parentNode.insertBefore(resultDiv, inputLine);
-        input.scrollIntoView({ behavior: 'smooth' });
+        insertOutput(buildPromptLine(), resultDiv);
     }
 
     function showDomOutput(element, cmdText) {
-        var cmdLine = document.createElement('div');
-        cmdLine.className = 'prompt';
-        var pathSpan = document.createElement('span');
-        pathSpan.className = 'path';
-        pathSpan.textContent = promptPath;
-        var dollarSpan = document.createElement('span');
-        dollarSpan.className = 'dollar';
-        dollarSpan.textContent = '$';
-        cmdLine.appendChild(pathSpan);
-        cmdLine.appendChild(document.createTextNode(' '));
-        cmdLine.appendChild(dollarSpan);
-        cmdLine.appendChild(document.createTextNode(' ' + (cmdText || input.value)));
-
         var resultDiv = document.createElement('div');
         resultDiv.className = 'cmd-output';
         resultDiv.appendChild(element);
-
-        var inputLine = input.closest('.input-line');
-        inputLine.parentNode.insertBefore(cmdLine, inputLine);
-        inputLine.parentNode.insertBefore(resultDiv, inputLine);
-        input.scrollIntoView({ behavior: 'smooth' });
+        insertOutput(buildPromptLine(cmdText), resultDiv);
     }
 })();

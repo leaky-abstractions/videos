@@ -48,6 +48,7 @@
         <script>
             var FILETREE = {{ filetree | dump | safe }};
             var CURRENT_PATH = {{ virtualPath | dump | safe }};
+            var PATH_PREFIX = {{ pathPrefix | dump | safe }};
         </script>
         <div class="terminal">
             <div class="terminal-chrome">

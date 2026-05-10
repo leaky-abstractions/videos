@@ -39,8 +39,10 @@ function getCurrentTheme() {
 
 function toggleThemePicker() {
     var picker = document.getElementById('theme-picker');
+    var toggle = document.querySelector('.theme-toggle');
     if (picker.classList.contains('open')) {
         picker.classList.remove('open');
+        if (toggle) toggle.classList.remove('theme-active');
         return;
     }
     if (!picker.hasChildNodes()) {
@@ -53,11 +55,14 @@ function toggleThemePicker() {
             btn.addEventListener('click', function() {
                 applyTheme(id);
                 picker.classList.remove('open');
+                var toggle = document.querySelector('.theme-toggle');
+                if (toggle) toggle.classList.remove('theme-active');
             });
             picker.appendChild(btn);
         });
     }
     picker.classList.toggle('open');
+    if (toggle) toggle.classList.add('theme-active');
 }
 
 function updatePickerActive(id) {
@@ -73,5 +78,7 @@ document.addEventListener('click', function(e) {
     if (!picker) return;
     if (!e.target.closest('.theme-toggle') && !e.target.closest('.theme-picker')) {
         picker.classList.remove('open');
+        var toggle = document.querySelector('.theme-toggle');
+        if (toggle) toggle.classList.remove('theme-active');
     }
 });

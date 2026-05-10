@@ -18,8 +18,8 @@
     function renderBreadcrumbs(startIndex, ellipsisUrl) {
         while (bc.firstChild) bc.removeChild(bc.firstChild);
 
-        // Desktop: always show root
-        if (!isMobile && startIndex > 0) {
+        // Desktop: always show root (unless it's the only part)
+        if (!isMobile && startIndex > 0 && startIndex < parts.length) {
             var rootLink = document.createElement('a');
             rootLink.href = urls[0] || '/';
             rootLink.textContent = parts[0];
@@ -65,7 +65,8 @@
 
     // Start with all segments, then truncate until it fits
     // Desktop starts at 1 (root rendered separately), mobile at 0
-    var startIndex = isMobile ? 0 : 1;
+    // Unless there's only one part (home page), then start at 0
+    var startIndex = (isMobile || parts.length <= 1) ? 0 : 1;
     renderBreadcrumbs(startIndex, null);
 
     while (bc.scrollWidth > bc.clientWidth && startIndex < parts.length - 1) {
@@ -116,7 +117,7 @@
     // --- Search overlay ---
     var searchShortcut = document.getElementById('search-shortcut');
     if (searchShortcut) {
-        searchShortcut.textContent = navigator.platform.indexOf('Mac') > -1 ? '⌘K' : 'Ctrl+K';
+        searchShortcut.textContent = /Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘K' : 'Ctrl+K';
         searchShortcut.addEventListener('click', openSearch);
     }
     var searchBtn = document.getElementById('search-btn');
@@ -198,7 +199,7 @@
         searchTimeout = setTimeout(async function () {
             try {
                 if (!window._pagefind) {
-                    window._pagefind = await import('/pagefind/pagefind.js');
+                    window._pagefind = await import(PATH_PREFIX + '/pagefind/pagefind.js');
                 }
                 var search = await window._pagefind.search(query);
                 searchResults.textContent = '';
@@ -401,6 +402,7 @@
         var href = link.getAttribute('href');
         if (!href || href.startsWith('#') || link.target === '_blank' || link.hasAttribute('download')) return;
         if (link.origin && link.origin !== window.location.origin) return;
+        if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
 
         e.preventDefault();
         sessionStorage.setItem('navigating', '1');

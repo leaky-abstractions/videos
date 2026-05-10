@@ -152,22 +152,26 @@ a:hover {
     font-family: inherit;
     padding: 4px 8px;
     border-radius: 3px;
-    animation: pulse-theme 3s ease-in-out 2s 3;
+    animation: pulse-theme 3s ease-in-out 2s infinite;
 }
 
-.terminal-chrome .theme-toggle:hover {
-    color: var(--base05);
+.terminal-chrome .theme-toggle:hover,
+.terminal-chrome .theme-toggle.theme-active {
+    color: var(--base0D);
     background: var(--base02);
     animation: none;
+    text-shadow: 0 0 20px var(--base0D), 0 0 40px color-mix(in srgb, var(--base0D) 40%, black);
 }
 
 @keyframes pulse-theme {
     0%,
     100% {
         color: var(--base04);
+        text-shadow: none;
     }
     50% {
         color: var(--base0D);
+        text-shadow: 0 0 20px var(--base0D), 0 0 40px color-mix(in srgb, var(--base0D) 40%, black);
     }
 }
 
@@ -776,7 +780,7 @@ a.ls-entry:hover .link-text {
 .toc-close {
     background: none;
     border: none;
-    color: var(--base04);
+    color: var(--base0D);
     font-size: 1.1rem;
     cursor: pointer;
     padding: 0 4px;
