@@ -415,6 +415,7 @@ export default function (eleventyConfig) {
     // Copy static files to output
     eleventyConfig.addPassthroughCopy({ 'site/css': 'css' });
     eleventyConfig.addPassthroughCopy({ 'site/js': 'js' });
+    eleventyConfig.addPassthroughCopy({ 'site/favicon.svg': 'favicon.svg' });
 
     // Load welcome.md as global data
     eleventyConfig.addGlobalData('welcome', () => readFileSync('site/_data/welcome.md', 'utf8'));
