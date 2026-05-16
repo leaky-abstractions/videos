@@ -1,0 +1,1003 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Leaky Abstractions — YouTube Banner Design Reference</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+        <style>
+            :root {
+                /* One Dark palette — verified from themes.js */
+                --od-bg: #282c34; /* base00 */
+                --od-surface: #353b45; /* base01 */
+                --od-surface2: #3e4451; /* base02 */
+                --od-muted: #545862; /* base03 */
+                --od-fg: #abb2bf; /* base05 */
+                --od-bright: #c8ccd4; /* base07 */
+                --od-red: #e06c75; /* base08 */
+                --od-orange: #d19a66; /* base09 */
+                --od-yellow: #e5c07b; /* base0A */
+                --od-green: #98c379; /* base0B */
+                --od-cyan: #56b6c2; /* base0C */
+                --od-blue: #61afef; /* base0D */
+                --od-purple: #c678dd; /* base0E */
+
+                /* Page chrome (outside the canvas) */
+                --page-bg: #14171c;
+                --page-fg: #abb2bf;
+                --page-muted: #545862;
+                --page-bright: #c8ccd4;
+                --page-line: #2a2f38;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                background: var(--page-bg);
+                color: var(--page-fg);
+                font-family: 'JetBrains Mono', monospace;
+                line-height: 1.5;
+                padding: 32px;
+            }
+            h1 {
+                color: var(--page-bright);
+                margin: 0 0 8px;
+                font-size: 1.6rem;
+            }
+            h2 {
+                color: var(--page-bright);
+                margin: 48px 0 16px;
+                padding-bottom: 8px;
+                border-bottom: 1px solid var(--page-line);
+                font-size: 1.15rem;
+            }
+            h3 {
+                color: var(--page-bright);
+                margin: 0 0 8px;
+                font-size: 0.95rem;
+            }
+            p.lead {
+                color: var(--page-muted);
+                margin: 0 0 24px;
+                font-size: 0.92rem;
+            }
+            code {
+                color: var(--od-cyan);
+            }
+
+            /* ─────────── Canvas section ─────────── */
+
+            .canvas-wrap {
+                background: #000;
+                border: 1px solid var(--page-line);
+                border-radius: 6px;
+                overflow: hidden;
+                position: relative;
+                margin-bottom: 16px;
+            }
+            /* Use the aspect-ratio trick + transform-scale so the canvas always
+       fits the wrapper width while preserving 2560×1440 absolute coords. */
+            .canvas-frame {
+                position: relative;
+                width: 100%;
+                aspect-ratio: 2560 / 1440;
+            }
+            .canvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 2560px;
+                height: 1440px;
+                background: var(--page-bg);
+                transform-origin: top left;
+                /* JS sets transform: scale() to fit container width.
+           Canvas bg is darker than the terminal window so the window
+           reads as a discrete object on TV/4K crops. */
+            }
+            /* Procedural noise overlay — masks 8-bit color banding in the
+               terminal window's drop-shadow gradient. At ~2% effective opacity
+               it's invisible to the eye but provides enough random variation
+               to dither away the smooth-gradient quantization bands. */
+            .canvas::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                z-index: 9999;
+                pointer-events: none;
+                opacity: 0.5;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            }
+
+            /* Zone overlays */
+            .zone {
+                position: absolute;
+                border: 2px dashed rgba(255, 255, 255, 0.18);
+                pointer-events: none;
+            }
+            .zone-label {
+                position: absolute;
+                top: 12px;
+                left: 12px;
+                background: rgba(0, 0, 0, 0.6);
+                color: rgba(255, 255, 255, 0.85);
+                padding: 8px 14px;
+                font-size: 22px;
+                font-family: 'JetBrains Mono', monospace;
+                font-weight: 700;
+                border-radius: 3px;
+                /* Hidden by default so the design can be judged without overlay
+           text. Fade in when the canvas is hovered. */
+                opacity: 0;
+                transition: opacity 0.15s ease;
+            }
+            .canvas:hover .zone-label {
+                opacity: 1;
+            }
+            .zone-tv {
+                width: 2560px;
+                height: 1440px;
+                top: 0;
+                left: 0;
+                border-color: rgba(198, 120, 221, 0.5);
+            }
+            .zone-desk {
+                width: 2560px;
+                height: 423px;
+                top: 508px;
+                left: 0;
+                border-color: rgba(97, 175, 239, 0.6);
+            }
+            .zone-std {
+                width: 1546px;
+                height: 423px;
+                top: 508px;
+                left: 507px;
+                border-color: rgba(86, 182, 194, 0.65);
+            }
+            .zone-safe {
+                width: 1235px;
+                height: 338px;
+                top: 551px;
+                left: 662px;
+                border-color: rgba(152, 195, 121, 0.85);
+            }
+
+            /* ─────────── Banner content ─────────── */
+
+            .banner {
+                position: absolute;
+                inset: 0;
+                font-family: 'JetBrains Mono', monospace;
+                color: var(--od-fg);
+                padding: 0;
+            }
+
+            /* Terminal window — width matches the SAFE zone so the window column
+       never bleeds outside the mobile-visible area horizontally.
+       **Symmetric** vertical padding (17px top / 17px bottom) so the
+       window is centered in the Standard zone. Chrome bar (26px) ends
+       exactly at SAFE-top — strictly invisible on mobile, no overlap.
+       Math: window_top (525) + chrome_height (26) = 551 = SAFE-top.
+       Padding (17) + chrome (26) = 43 = fixed gap Standard-top→SAFE-top. */
+            .b-window {
+                position: absolute;
+                top: 525px;
+                left: 662px;
+                width: 1235px;
+                height: 389px;
+                background: var(--od-bg);
+                border-radius: 14px;
+                overflow: hidden;
+                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+            }
+            .b-window-chrome {
+                height: 26px;
+                background: var(--od-surface2);
+                padding: 0 22px;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                font-family: 'JetBrains Mono', monospace;
+            }
+            /* Chrome layout: [dots] [title]
+       macOS-style dots and the working-directory title cluster at the left.
+       Elements are sized to fit comfortably in the 26px chrome. */
+            .b-window-chrome .cb-dots {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .b-window-chrome .cb-title {
+                color: var(--od-fg);
+                font-size: 15px;
+                font-weight: 700;
+                line-height: 1;
+                /* `~` is a high-diacritic glyph in monospace fonts — sits in the
+           upper portion of its em box. Nudge down 2px to visually center
+           the glyph (not just the bounding box) in the chrome bar. */
+                margin-top: 2px;
+            }
+            .b-window-chrome .cb-dot {
+                display: block;
+                width: 12px;
+                height: 12px;
+                border-radius: 999px;
+                flex-shrink: 0;
+            }
+            .b-window-chrome .cb-dot-red {
+                background: var(--od-red);
+            }
+            .b-window-chrome .cb-dot-yellow {
+                background: var(--od-yellow);
+            }
+            .b-window-chrome .cb-dot-green {
+                background: var(--od-green);
+            }
+
+            /* Static cursor block — frozen "on" frame for the export-ready design.
+               vertical-align: -0.15em + height: 1em positions the cursor to align
+               with the prompt characters (covers cap-height to ~baseline). */
+            .b-cursor {
+                display: inline-block;
+                width: 0.55em;
+                height: 1em;
+                background: var(--od-fg);
+                vertical-align: -0.15em;
+                margin-left: 4px;
+            }
+
+            /* Main content — sits inside the SAFE zone, top-aligned. The 18px top
+       padding gives visible breathing room between the chrome bar's bottom
+       edge (exactly at SAFE-top y=551) and the first command line. Side
+       padding (22px) matches chrome so content's left edge aligns with
+       the traffic-light dots. */
+            .b-main {
+                position: absolute;
+                top: 551px;
+                left: 662px;
+                width: 1235px;
+                height: 338px;
+                padding: 22px 28px 22px;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                font-size: 22px;
+                line-height: 1.4;
+            }
+            .b-main .line {
+                margin-bottom: 2px;
+            }
+            .b-main .blank {
+                height: 10px;
+            }
+            .b-main .path {
+                color: var(--od-green);
+            }
+            .b-main .dollar {
+                color: var(--od-blue);
+            }
+            /* Command-line syntax highlighting: name in cyan (the executable),
+               args in yellow (the target). Mirrors fish / zsh-syntax-highlighting /
+               vim One Dark syntax conventions. Both dimmed via opacity so the
+               outputs below read as primary content; prompt characters (path/dollar)
+               stay at full brightness as navigation context. */
+            .b-main .cmd-name {
+                color: var(--od-cyan);
+                opacity: 0.75;
+            }
+            .b-main .cmd-arg {
+                color: var(--od-yellow);
+                opacity: 0.75;
+            }
+            /* Whoami's {;} is the *single* branded moment on the banner — magenta
+       color + two-layer glow mirrors the website's hover state. Permanent
+       "captured-hover" feel for the channel-name reveal. */
+            .b-main .brand {
+                color: var(--od-purple);
+                font-weight: 700;
+                text-shadow:
+                    0 0 8px var(--od-purple),
+                    0 0 20px var(--od-purple);
+            }
+            /* Outputs (tagline, whoami brand line, topics) are bold + bright to
+               create a clear weight hierarchy: dimmed commands → bold bright
+               outputs. The whoami line shares the bright color with the tagline
+               so the {;} glow becomes the tipping factor that makes it the
+               *most* prominent line. */
+            .b-main .tagline,
+            .b-main .topics,
+            .b-main .line:has(.brand) {
+                font-weight: 700;
+            }
+            .b-main .line:has(.brand),
+            .b-main .tagline {
+                color: var(--od-bright);
+            }
+            /* Mimics how a real `ls` lays out items: column-major flow (top-down,
+       then left-to-right), columns sized to their widest member, narrow
+       constant column gap. Six items become 3 cols × 2 rows. */
+            .b-main .topics {
+                display: grid;
+                grid-template-rows: repeat(2, auto);
+                grid-auto-flow: column;
+                grid-auto-columns: max-content;
+                column-gap: 36px;
+                row-gap: 6px;
+                margin-top: 6px;
+                font-size: 22px;
+            }
+            .b-main .topic {
+                white-space: nowrap;
+            }
+            .b-main .folder-icon {
+                color: var(--od-blue);
+                margin-right: 12px;
+            }
+            .b-main .topic-name {
+                color: var(--od-fg);
+            }
+            .b-main .topic-slash {
+                color: var(--od-fg);
+            }
+
+            /* ─────────── Crop previews ─────────── */
+
+            .crops {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 24px;
+            }
+            .crop {
+                background: #000;
+                border: 1px solid var(--page-line);
+                border-radius: 4px;
+                overflow: hidden;
+            }
+            .crop-name {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+                color: var(--page-muted);
+                border-bottom: 1px solid var(--page-line);
+            }
+            .crop-name strong {
+                color: var(--page-bright);
+            }
+            .crop-frame {
+                position: relative;
+                background: var(--page-bg);
+                overflow: hidden;
+            }
+            .crop-mobile {
+                aspect-ratio: 1235 / 338;
+            }
+            .crop-tablet {
+                aspect-ratio: 1546 / 423;
+            }
+            .crop-desk {
+                aspect-ratio: 2560 / 423;
+            }
+
+            .crop-canvas {
+                position: absolute;
+                width: 2560px;
+                height: 1440px;
+                background: var(--page-bg);
+                transform-origin: top left;
+            }
+            /* JS positions and scales these per crop */
+
+            /* ─────────── Spec cards ─────────── */
+
+            .specs-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 20px;
+            }
+            .spec {
+                background: var(--od-surface);
+                padding: 18px;
+                border-radius: 6px;
+            }
+            .spec h3 {
+                color: var(--page-bright);
+                font-size: 0.95rem;
+                margin: 0 0 12px;
+                padding-bottom: 6px;
+                border-bottom: 1px solid var(--page-line);
+            }
+            .spec-row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 5px 0;
+                font-size: 0.82rem;
+            }
+            .swatch {
+                width: 28px;
+                height: 28px;
+                border-radius: 4px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                flex-shrink: 0;
+            }
+            .spec-label {
+                color: var(--page-fg);
+                font-family: 'JetBrains Mono', monospace;
+            }
+            .spec-hex {
+                color: var(--page-muted);
+                margin-left: auto;
+                font-size: 0.78rem;
+            }
+            .spec-use {
+                color: var(--page-muted);
+                font-size: 0.74rem;
+                margin-left: 4px;
+            }
+
+            .summary-block {
+                background: var(--od-surface);
+                padding: 18px 22px;
+                border-radius: 6px;
+                font-size: 0.85rem;
+                font-family: 'JetBrains Mono', monospace;
+                color: var(--page-fg);
+                white-space: pre;
+                overflow-x: auto;
+                line-height: 1.65;
+            }
+
+            /* ─────────── Raw render mode (for headless PNG export) ───────────
+               Activated by ?raw=1 query param. Strips everything except the
+               main canvas, renders it at native 2560×1440 with no scaling,
+               and hides the zone overlays. This is what render-banner.sh
+               captures via headless Firefox. */
+            body.raw {
+                margin: 0;
+                padding: 0;
+                background: var(--page-bg);
+                overflow: hidden;
+            }
+            body.raw > *:not(.canvas-wrap) {
+                display: none !important;
+            }
+            body.raw .canvas-wrap {
+                margin: 0;
+                border: none;
+                border-radius: 0;
+                background: var(--page-bg);
+            }
+            body.raw .canvas-frame {
+                width: 2560px;
+                height: 1440px;
+                aspect-ratio: auto;
+            }
+            body.raw .canvas {
+                transform: none !important;
+            }
+            body.raw .zone {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Leaky Abstractions — YouTube Banner Design Reference</h1>
+        <p class="lead">
+            One source image (2560×1440), four visibility crops. Use this guide as a reference in Figma / Affinity /
+            Photoshop / Illustrator. All zone coords are in absolute pixels.
+        </p>
+
+        <!-- ─────────── Full canvas with all zone overlays ─────────── -->
+
+        <h2>Full canvas (2560 × 1440) with all crops overlaid</h2>
+        <p class="lead">
+            The dashed boxes show each viewing crop's boundary. Critical content lives in the
+            <code>SAFE</code> zone (visible on all devices including mobile). Everything outside only shows on bigger
+            displays.
+        </p>
+
+        <div class="canvas-wrap">
+            <div class="canvas-frame">
+                <div class="canvas" id="main-canvas">
+                    <!-- Main banner content (inside SAFE area) -->
+                    <div class="b-window">
+                        <div class="b-window-chrome">
+                            <span class="cb-dots">
+                                <span class="cb-dot cb-dot-red"></span>
+                                <span class="cb-dot cb-dot-yellow"></span>
+                                <span class="cb-dot cb-dot-green"></span>
+                            </span>
+                            <span class="cb-title">~</span>
+                        </div>
+                    </div>
+                    <div class="b-main">
+                        <div class="line">
+                            <span class="path">~</span> <span class="dollar">$</span>
+                            <span class="cmd-name">whoami</span>
+                        </div>
+                        <div class="line"><span class="brand">{;}</span> Leaky Abstractions</div>
+                        <div class="blank"></div>
+                        <div class="line">
+                            <span class="path">~</span> <span class="dollar">$</span> <span class="cmd-name">cat</span>
+                            <span class="cmd-arg">ABOUT.md</span>
+                        </div>
+                        <div class="line tagline">from theory to assembly.</div>
+                        <div class="blank"></div>
+                        <div class="line">
+                            <span class="path">~</span> <span class="dollar">$</span> <span class="cmd-name">ls</span>
+                            <span class="cmd-arg">topics/</span>
+                        </div>
+                        <div class="topics">
+                            <div class="topic">
+                                <i class="folder-icon fa-solid fa-code"></i
+                                ><span class="topic-name">software-engineering</span><span class="topic-slash">/</span>
+                            </div>
+                            <div class="topic">
+                                <i class="folder-icon fa-solid fa-sitemap"></i
+                                ><span class="topic-name">software-architecture</span><span class="topic-slash">/</span>
+                            </div>
+                            <div class="topic">
+                                <i class="folder-icon fa-solid fa-square-root-variable"></i
+                                ><span class="topic-name">computer-science</span><span class="topic-slash">/</span>
+                            </div>
+                            <div class="topic">
+                                <i class="folder-icon fa-solid fa-microchip"></i
+                                ><span class="topic-name">embedded-systems</span><span class="topic-slash">/</span>
+                            </div>
+                            <div class="topic">
+                                <i class="folder-icon fa-solid fa-gamepad"></i><span class="topic-name">game-dev</span
+                                ><span class="topic-slash">/</span>
+                            </div>
+                            <div class="topic">
+                                <i class="folder-icon fa-solid fa-gears"></i
+                                ><span class="topic-name">systems-programming</span><span class="topic-slash">/</span>
+                            </div>
+                        </div>
+                        <div class="blank"></div>
+                        <div class="line">
+                            <span class="path">~</span> <span class="dollar">$</span> <span class="b-cursor"></span>
+                        </div>
+                    </div>
+
+                    <!-- Zone overlays (drawn on top, after content) -->
+                    <div class="zone zone-tv"><span class="zone-label">TV / 4K — 2560 × 1440</span></div>
+                    <div class="zone zone-desk"><span class="zone-label">Desktop band — 2560 × 423</span></div>
+                    <div class="zone zone-std"><span class="zone-label">Standard (tablet+) — 1546 × 423</span></div>
+                    <div class="zone zone-safe"><span class="zone-label">SAFE (all devices) — 1235 × 338</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─────────── Crop previews ─────────── -->
+
+        <h2>How it looks per device (preview crops)</h2>
+        <p class="lead">Same image, three crop windows. Use these to verify critical content survives every crop.</p>
+
+        <div class="crops">
+            <div class="crop">
+                <div class="crop-name"><strong>Mobile / safe</strong> — 1235 × 338 cropped from center</div>
+                <div class="crop-frame crop-mobile">
+                    <div class="crop-canvas" data-crop="mobile">
+                        <!-- duplicated content -->
+                        <div class="b-window">
+                            <div class="b-window-chrome">
+                                <span class="cb-dots">
+                                    <span class="cb-dot cb-dot-red"></span>
+                                    <span class="cb-dot cb-dot-yellow"></span>
+                                    <span class="cb-dot cb-dot-green"></span>
+                                </span>
+                                <span class="cb-title">~</span>
+                            </div>
+                        </div>
+                        <div class="b-main">
+                            <div class="line">
+                                <span class="path">~</span> <span class="dollar">$</span>
+                                <span class="cmd-name">whoami</span>
+                            </div>
+                            <div class="line"><span class="brand">{;}</span> Leaky Abstractions</div>
+                            <div class="blank"></div>
+                            <div class="line">
+                                <span class="path">~</span> <span class="dollar">$</span>
+                                <span class="cmd-name">cat</span> <span class="cmd-arg">ABOUT.md</span>
+                            </div>
+                            <div class="line tagline">from theory to assembly.</div>
+                            <div class="blank"></div>
+                            <div class="line">
+                                <span class="path">~</span> <span class="dollar">$</span>
+                                <span class="cmd-name">ls</span> <span class="cmd-arg">topics/</span>
+                            </div>
+                            <div class="topics">
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-code"></i
+                                    ><span class="topic-name">software-engineering</span
+                                    ><span class="topic-slash">/</span>
+                                </div>
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-sitemap"></i
+                                    ><span class="topic-name">software-architecture</span
+                                    ><span class="topic-slash">/</span>
+                                </div>
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-square-root-variable"></i
+                                    ><span class="topic-name">computer-science</span><span class="topic-slash">/</span>
+                                </div>
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-microchip"></i
+                                    ><span class="topic-name">embedded-systems</span><span class="topic-slash">/</span>
+                                </div>
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-gamepad"></i
+                                    ><span class="topic-name">game-dev</span><span class="topic-slash">/</span>
+                                </div>
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-gears"></i
+                                    ><span class="topic-name">systems-programming</span
+                                    ><span class="topic-slash">/</span>
+                                </div>
+                            </div>
+                            <div class="blank"></div>
+                            <div class="line">
+                                <span class="path">~</span> <span class="dollar">$</span> <span class="b-cursor"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="crop">
+                <div class="crop-name"><strong>Tablet / standard</strong> — 1546 × 423 cropped from center</div>
+                <div class="crop-frame crop-tablet">
+                    <div class="crop-canvas" data-crop="tablet">
+                        <div class="b-window">
+                            <div class="b-window-chrome">
+                                <span class="cb-dots">
+                                    <span class="cb-dot cb-dot-red"></span>
+                                    <span class="cb-dot cb-dot-yellow"></span>
+                                    <span class="cb-dot cb-dot-green"></span>
+                                </span>
+                                <span class="cb-title">~</span>
+                            </div>
+                        </div>
+                        <div class="b-main">
+                            <div class="line">
+                                <span class="path">~</span> <span class="dollar">$</span>
+                                <span class="cmd-name">whoami</span>
+                            </div>
+                            <div class="line"><span class="brand">{;}</span> Leaky Abstractions</div>
+                            <div class="blank"></div>
+                            <div class="line">
+                                <span class="path">~</span> <span class="dollar">$</span>
+                                <span class="cmd-name">cat</span> <span class="cmd-arg">ABOUT.md</span>
+                            </div>
+                            <div class="line tagline">from theory to assembly.</div>
+                            <div class="blank"></div>
+                            <div class="line">
+                                <span class="path">~</span> <span class="dollar">$</span>
+                                <span class="cmd-name">ls</span> <span class="cmd-arg">topics/</span>
+                            </div>
+                            <div class="topics">
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-code"></i
+                                    ><span class="topic-name">software-engineering</span
+                                    ><span class="topic-slash">/</span>
+                                </div>
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-sitemap"></i
+                                    ><span class="topic-name">software-architecture</span
+                                    ><span class="topic-slash">/</span>
+                                </div>
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-square-root-variable"></i
+                                    ><span class="topic-name">computer-science</span><span class="topic-slash">/</span>
+                                </div>
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-microchip"></i
+                                    ><span class="topic-name">embedded-systems</span><span class="topic-slash">/</span>
+                                </div>
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-gamepad"></i
+                                    ><span class="topic-name">game-dev</span><span class="topic-slash">/</span>
+                                </div>
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-gears"></i
+                                    ><span class="topic-name">systems-programming</span
+                                    ><span class="topic-slash">/</span>
+                                </div>
+                            </div>
+                            <div class="blank"></div>
+                            <div class="line">
+                                <span class="path">~</span> <span class="dollar">$</span> <span class="b-cursor"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="crop">
+                <div class="crop-name"><strong>Desktop band</strong> — 2560 × 423 (full width, short)</div>
+                <div class="crop-frame crop-desk">
+                    <div class="crop-canvas" data-crop="desktop">
+                        <div class="b-window">
+                            <div class="b-window-chrome">
+                                <span class="cb-dots">
+                                    <span class="cb-dot cb-dot-red"></span>
+                                    <span class="cb-dot cb-dot-yellow"></span>
+                                    <span class="cb-dot cb-dot-green"></span>
+                                </span>
+                                <span class="cb-title">~</span>
+                            </div>
+                        </div>
+                        <div class="b-main">
+                            <div class="line">
+                                <span class="path">~</span> <span class="dollar">$</span>
+                                <span class="cmd-name">whoami</span>
+                            </div>
+                            <div class="line"><span class="brand">{;}</span> Leaky Abstractions</div>
+                            <div class="blank"></div>
+                            <div class="line">
+                                <span class="path">~</span> <span class="dollar">$</span>
+                                <span class="cmd-name">cat</span> <span class="cmd-arg">ABOUT.md</span>
+                            </div>
+                            <div class="line tagline">from theory to assembly.</div>
+                            <div class="blank"></div>
+                            <div class="line">
+                                <span class="path">~</span> <span class="dollar">$</span>
+                                <span class="cmd-name">ls</span> <span class="cmd-arg">topics/</span>
+                            </div>
+                            <div class="topics">
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-code"></i
+                                    ><span class="topic-name">software-engineering</span
+                                    ><span class="topic-slash">/</span>
+                                </div>
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-sitemap"></i
+                                    ><span class="topic-name">software-architecture</span
+                                    ><span class="topic-slash">/</span>
+                                </div>
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-square-root-variable"></i
+                                    ><span class="topic-name">computer-science</span><span class="topic-slash">/</span>
+                                </div>
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-microchip"></i
+                                    ><span class="topic-name">embedded-systems</span><span class="topic-slash">/</span>
+                                </div>
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-gamepad"></i
+                                    ><span class="topic-name">game-dev</span><span class="topic-slash">/</span>
+                                </div>
+                                <div class="topic">
+                                    <i class="folder-icon fa-solid fa-gears"></i
+                                    ><span class="topic-name">systems-programming</span
+                                    ><span class="topic-slash">/</span>
+                                </div>
+                            </div>
+                            <div class="blank"></div>
+                            <div class="line">
+                                <span class="path">~</span> <span class="dollar">$</span> <span class="b-cursor"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─────────── Color palette ─────────── -->
+
+        <h2>Color palette (One Dark)</h2>
+
+        <div class="specs-grid">
+            <div class="spec">
+                <h3>Background &amp; surfaces</h3>
+                <div class="spec-row">
+                    <div class="swatch" style="background: #282c34"></div>
+                    <span class="spec-label">base00</span> <span class="spec-hex">#282c34</span>
+                </div>
+                <div class="spec-row">
+                    <div class="swatch" style="background: #353b45"></div>
+                    <span class="spec-label">base01</span> <span class="spec-hex">#353b45</span>
+                </div>
+                <div class="spec-row">
+                    <div class="swatch" style="background: #3e4451"></div>
+                    <span class="spec-label">base02</span> <span class="spec-hex">#3e4451</span>
+                </div>
+            </div>
+
+            <div class="spec">
+                <h3>Foreground (text)</h3>
+                <div class="spec-row">
+                    <div class="swatch" style="background: #545862"></div>
+                    <span class="spec-label">base03</span> <span class="spec-hex">#545862</span>
+                </div>
+                <div class="spec-row">
+                    <div class="swatch" style="background: #abb2bf"></div>
+                    <span class="spec-label">base05</span> <span class="spec-hex">#abb2bf</span>
+                </div>
+                <div class="spec-row">
+                    <div class="swatch" style="background: #c8ccd4"></div>
+                    <span class="spec-label">base07</span> <span class="spec-hex">#c8ccd4</span>
+                </div>
+            </div>
+
+            <div class="spec">
+                <h3>Brand accents</h3>
+                <div class="spec-row">
+                    <div class="swatch" style="background: #61afef"></div>
+                    <span class="spec-label">base0D</span> <span class="spec-hex">#61afef</span>
+                </div>
+                <div class="spec-row">
+                    <div class="swatch" style="background: #56b6c2"></div>
+                    <span class="spec-label">base0C</span> <span class="spec-hex">#56b6c2</span>
+                </div>
+                <div class="spec-row">
+                    <div class="swatch" style="background: #c678dd"></div>
+                    <span class="spec-label">base0E</span> <span class="spec-hex">#c678dd</span>
+                </div>
+                <div class="spec-row">
+                    <div class="swatch" style="background: #98c379"></div>
+                    <span class="spec-label">base0B</span> <span class="spec-hex">#98c379</span>
+                </div>
+            </div>
+
+            <div class="spec">
+                <h3>Usage map</h3>
+                <div class="spec-row">
+                    <span class="spec-label" style="color: #61afef">{;}</span>
+                    <span class="spec-use">brand mark, $ prompt, folder icons</span>
+                </div>
+                <div class="spec-row">
+                    <span class="spec-label" style="color: #98c379">~</span>
+                    <span class="spec-use">path / directory in prompt</span>
+                </div>
+                <div class="spec-row">
+                    <span class="spec-label" style="color: #56b6c2">[content-tag]</span>
+                    <span class="spec-use">content category tags</span>
+                </div>
+                <div class="spec-row">
+                    <span class="spec-label" style="color: #c678dd">[2 of 3]</span>
+                    <span class="spec-use">series position / meta count</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─────────── Typography ─────────── -->
+
+        <h2>Typography</h2>
+
+        <div class="specs-grid">
+            <div class="spec">
+                <h3>Font family</h3>
+                <div class="spec-row"><span class="spec-label" style="font-size: 1rem">JetBrains Mono</span></div>
+                <div class="spec-row spec-use">Regular 400, Bold 700</div>
+                <div class="spec-row spec-use">fonts.google.com/specimen/JetBrains+Mono</div>
+            </div>
+
+            <div class="spec">
+                <h3>Sizes (at 2560×1440 native)</h3>
+                <div class="spec-row">
+                    <span class="spec-label">Body / commands</span> <span class="spec-hex">22px</span>
+                </div>
+                <div class="spec-row">
+                    <span class="spec-label">Topic items</span> <span class="spec-hex">18px</span>
+                </div>
+                <div class="spec-row">
+                    <span class="spec-label">Chrome bar height</span> <span class="spec-hex">31px</span>
+                </div>
+                <div class="spec-row">
+                    <span class="spec-label">Chrome brand {;}</span> <span class="spec-hex">20px bold</span>
+                </div>
+                <div class="spec-row">
+                    <span class="spec-label">Chrome title (~)</span> <span class="spec-hex">16px (+2px nudge)</span>
+                </div>
+                <div class="spec-row">
+                    <span class="spec-label">Traffic-light dots</span> <span class="spec-hex">12px ⌀ · 8px gap</span>
+                </div>
+            </div>
+
+            <div class="spec">
+                <h3>Line spec</h3>
+                <div class="spec-row">
+                    <span class="spec-label">line-height</span> <span class="spec-hex">1.4</span>
+                </div>
+                <div class="spec-row"><span class="spec-label">blank-gap</span> <span class="spec-hex">12px</span></div>
+                <div class="spec-row">
+                    <span class="spec-label">topic row-gap</span> <span class="spec-hex">6px</span>
+                </div>
+                <div class="spec-row">
+                    <span class="spec-label">topic col-gap</span> <span class="spec-hex">60px</span>
+                </div>
+                <div class="spec-row">
+                    <span class="spec-label">SAFE inner pad</span> <span class="spec-hex">22px L/R</span>
+                </div>
+                <div class="spec-row">
+                    <span class="spec-label">topics layout</span> <span class="spec-hex">3 cols × 2 rows</span>
+                </div>
+                <div class="spec-row">
+                    <span class="spec-label">topics flow</span> <span class="spec-hex">column-major</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ─────────── Zone coordinates ─────────── -->
+
+        <h2>Zone coordinates (absolute pixels)</h2>
+
+        <div class="summary-block">
+            Canvas .................... 2560 × 1440 (PNG, &lt; 6 MB) Canvas background ......... #14171c (darker than
+            terminal body — window stands out on TV/4K) SAFE zone (all devices) ... 1235 × 338 @ x=662, y=551 Standard
+            (tablet+) ........ 1546 × 423 @ x=507, y=508 Desktop band .............. 2560 × 423 @ x=0, y=508 TV / 4K
+            (full) ............ 2560 × 1440 @ x=0, y=0 Terminal window ........... 1235 × 399 @ x=662, y=520 (12px
+            vertical padding above &amp; below window) └─ Chrome bar ........... 1235 × 31 @ x=662, y=520 (bg #3e4451 /
+            base02 — chrome bottom ENDS at SAFE-top y=551, never bleeds) └─ Window body .......... 1235 × 368 @ x=662,
+            y=551 (terminal interior — bg #282c34 / base00) r=14px rounded corners · shadow 0 24px 80px rgba(0,0,0,0.45)
+            Geometry lock: window_padding (12) + chrome_height (31) = 43 = Standard-top→SAFE-top gap Banner content
+            (SAFE) ..... 1191 × 338 @ x=684, y=551 (b-main = SAFE; 18px top padding gives breathing room before whoami)
+            Layout .................... top-aligned (justify-content: flex-start) — content reads as terminal session
+            Empty prompt cursor ....... INLINE at end of content (after ls topics/ + blank) — STATIC, visible on all
+            crops
+        </div>
+
+        <script>
+            // Raw render mode — applied as early as possible so the page never
+            // flashes the reference-document chrome before the headless capture.
+            const RAW = new URLSearchParams(location.search).get('raw') === '1';
+            if (RAW) document.body.classList.add('raw');
+
+            // Fit the main canvas to its wrapper width.
+            // Skipped in raw mode: the canvas should stay at native 2560×1440.
+            function fitCanvas() {
+                if (RAW) return;
+                const canvases = document.querySelectorAll('.canvas, .crop-canvas');
+                canvases.forEach((el) => {
+                    const parent = el.parentElement;
+                    const parentRect = parent.getBoundingClientRect();
+                    const isCrop = el.classList.contains('crop-canvas');
+
+                    if (!isCrop) {
+                        // Main canvas — scale to fit parent width
+                        const scale = parentRect.width / 2560;
+                        el.style.transform = `scale(${scale})`;
+                        return;
+                    }
+
+                    // Crop preview — scale and offset to show the specific crop
+                    const crop = el.dataset.crop;
+                    let cropW, cropH, cropX, cropY;
+                    if (crop === 'mobile') {
+                        cropW = 1235;
+                        cropH = 338;
+                        cropX = 662;
+                        cropY = 551;
+                    }
+                    if (crop === 'tablet') {
+                        cropW = 1546;
+                        cropH = 423;
+                        cropX = 507;
+                        cropY = 508;
+                    }
+                    if (crop === 'desktop') {
+                        cropW = 2560;
+                        cropH = 423;
+                        cropX = 0;
+                        cropY = 508;
+                    }
+                    const scale = parentRect.width / cropW;
+                    el.style.transform = `translate(${-cropX * scale}px, ${-cropY * scale}px) scale(${scale})`;
+                });
+            }
+
+            window.addEventListener('load', fitCanvas);
+            window.addEventListener('resize', fitCanvas);
+        </script>
+    </body>
+</html>
